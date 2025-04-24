@@ -25,7 +25,7 @@ venv/
 # config\maps\traffic_grid_routes.rou.xml
 
 ```xml
-<?xml version="1.0" encoding="UTF-8"?> <routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd"> <vType id="car" accel="2.6" decel="4.5" sigma="0.5" length="5" minGap="2.5" maxSpeed="16.67" guiShape="passenger"/> <!-- Routes --> <route id="route0" edges="A0B0 B0B1 B1A1 A1A0"/> <route id="route1" edges="A1B1 B1B0 B0A0 A0A1"/> <route id="route2" edges="A0A1 A1B1 B1B0 B0A0"/> <route id="route3" edges="B0A0 A0A1 A1B1 B1B0"/> <!-- Traffic flows --> <flow id="flow0" type="car" route="route0" begin="0" end="1000" vehsPerHour="300"/> <flow id="flow1" type="car" route="route1" begin="0" end="1000" vehsPerHour="300"/> <flow id="flow2" type="car" route="route2" begin="0" end="1000" vehsPerHour="300"/> <flow id="flow3" type="car" route="route3" begin="0" end="1000" vehsPerHour="300"/> </routes>
+<?xml version="1.0" encoding="UTF-8"?> <routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd"> <vType id="car" accel="2.6" decel="4.5" sigma="0.5" length="5" minGap="2.5" maxSpeed="13.89" guiShape="passenger"/> <!-- Routes --> <route id="route0" edges="A0B0 B0B1 B1A1 A1A0"/> <route id="route1" edges="A1B1 B1B0 B0A0 A0A1"/> <route id="route2" edges="A0A1 A1B1 B1B0 B0A0"/> <route id="route3" edges="B0A0 A0A1 A1B1 B1B0"/> <!-- Traffic flows --> <flow id="flow0" type="car" route="route0" begin="0" end="1000" vehsPerHour="300"/> <flow id="flow1" type="car" route="route1" begin="0" end="1000" vehsPerHour="300"/> <flow id="flow2" type="car" route="route2" begin="0" end="1000" vehsPerHour="300"/> <flow id="flow3" type="car" route="route3" begin="0" end="1000" vehsPerHour="300"/> </routes>
 ```
 
 # config\maps\traffic_grid.edg.xml
@@ -37,7 +37,7 @@ venv/
 # config\maps\traffic_grid.net.xml
 
 ```xml
-<?xml version="1.0" encoding="UTF-8"?> <!-- generated on 2025-04-24 18:19:10 by Eclipse SUMO netconvert Version 1.22.0 <netconvertConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd"> <input> <node-files value="C:\Users\Theon\Downloads\traffic_ai_comparison\config\maps\traffic_grid.nod.xml"/> <edge-files value="C:\Users\Theon\Downloads\traffic_ai_comparison\config\maps\traffic_grid.edg.xml"/> </input> <output> <output-file value="C:\Users\Theon\Downloads\traffic_ai_comparison\config\maps\traffic_grid.net.xml"/> </output> <junctions> <no-turnarounds value="true"/> <junctions.corner-detail value="5"/> <junctions.limit-turn-speed value="5.5"/> </junctions> </netconvertConfiguration> --> <net version="1.20" junctionCornerDetail="5" limitTurnSpeed="5.50" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/net_file.xsd"> <location netOffset="0.00,0.00" convBoundary="0.00,0.00,100.00,100.00" origBoundary="0.00,0.00,100.00,100.00" projParameter="!"/> <edge id=":A0_0" function="internal"> <lane id=":A0_0_0" index="0" speed="8.96" length="18.06" shape="-4.80,6.40 -4.10,1.50 -2.00,-2.00 1.50,-4.10 6.40,-4.80"/> <lane id=":A0_0_1" index="1" speed="7.66" length="12.90" shape="-1.60,6.40 -1.10,2.90 0.40,0.40 2.90,-1.10 6.40,-1.60"/> </edge> <edge id=":A0_2" function="internal"> <lane id=":A0_2_0" index="0" speed="3.90" length="2.58" shape="6.40,4.80 5.70,4.90 5.20,5.20 4.90,5.70 4.80,6.40"/> <lane id=":A0_2_1" index="1" speed="6.08" length="7.74" shape="6.40,1.60 4.30,1.90 2.80,2.80 1.90,4.30 1.60,6.40"/> </edge> <edge id=":A1_0" function="internal"> <lane id=":A1_0_0" index="0" speed="8.96" length="18.06" shape="6.40,104.80 1.50,104.10 -2.00,102.00 -4.10,98.50 -4.80,93.60"/> <lane id=":A1_0_1" index="1" speed="7.66" length="12.90" shape="6.40,101.60 2.90,101.10 0.40,99.60 -1.10,97.10 -1.60,93.60"/> </edge> <edge id=":A1_2" function="internal"> <lane id=":A1_2_0" index="0" speed="3.90" length="2.58" shape="4.80,93.60 4.90,94.30 5.20,94.80 5.70,95.10 6.40,95.20"/> <lane id=":A1_2_1" index="1" speed="6.08" length="7.74" shape="1.60,93.60 1.90,95.70 2.80,97.20 4.30,98.10 6.40,98.40"/> </edge> <edge id=":B0_0" function="internal"> <lane id=":B0_0_0" index="0" speed="3.90" length="2.58" shape="95.20,6.40 95.10,5.70 94.80,5.20 94.30,4.90 93.60,4.80"/> <lane id=":B0_0_1" index="1" speed="6.08" length="7.74" shape="98.40,6.40 98.10,4.30 97.20,2.80 95.70,1.90 93.60,1.60"/> </edge> <edge id=":B0_2" function="internal"> <lane id=":B0_2_0" index="0" speed="8.96" length="18.06" shape="93.60,-4.80 98.50,-4.10 102.00,-2.00 104.10,1.50 104.80,6.40"/> <lane id=":B0_2_1" index="1" speed="7.66" length="12.90" shape="93.60,-1.60 97.10,-1.10 99.60,0.40 101.10,2.90 101.60,6.40"/> </edge> <edge id=":B1_0" function="internal"> <lane id=":B1_0_0" index="0" speed="8.96" length="18.06" shape="104.80,93.60 104.10,98.50 102.00,102.00 98.50,104.10 93.60,104.80"/> <lane id=":B1_0_1" index="1" speed="7.66" length="12.90" shape="101.60,93.60 101.10,97.10 99.60,99.60 97.10,101.10 93.60,101.60"/> </edge> <edge id=":B1_2" function="internal"> <lane id=":B1_2_0" index="0" speed="3.90" length="2.58" shape="93.60,95.20 94.30,95.10 94.80,94.80 95.10,94.30 95.20,93.60"/> <lane id=":B1_2_1" index="1" speed="6.08" length="7.74" shape="93.60,98.40 95.70,98.10 97.20,97.20 98.10,95.70 98.40,93.60"/> </edge> <edge id="A0A1" from="A0" to="A1" priority="1"> <lane id="A0A1_0" index="0" speed="13.89" length="87.20" shape="4.80,6.40 4.80,93.60"/> <lane id="A0A1_1" index="1" speed="13.89" length="87.20" shape="1.60,6.40 1.60,93.60"/> </edge> <edge id="A0B0" from="A0" to="B0" priority="1"> <lane id="A0B0_0" index="0" speed="13.89" length="87.20" shape="6.40,-4.80 93.60,-4.80"/> <lane id="A0B0_1" index="1" speed="13.89" length="87.20" shape="6.40,-1.60 93.60,-1.60"/> </edge> <edge id="A1A0" from="A1" to="A0" priority="1"> <lane id="A1A0_0" index="0" speed="13.89" length="87.20" shape="-4.80,93.60 -4.80,6.40"/> <lane id="A1A0_1" index="1" speed="13.89" length="87.20" shape="-1.60,93.60 -1.60,6.40"/> </edge> <edge id="A1B1" from="A1" to="B1" priority="1"> <lane id="A1B1_0" index="0" speed="13.89" length="87.20" shape="6.40,95.20 93.60,95.20"/> <lane id="A1B1_1" index="1" speed="13.89" length="87.20" shape="6.40,98.40 93.60,98.40"/> </edge> <edge id="B0A0" from="B0" to="A0" priority="1"> <lane id="B0A0_0" index="0" speed="13.89" length="87.20" shape="93.60,4.80 6.40,4.80"/> <lane id="B0A0_1" index="1" speed="13.89" length="87.20" shape="93.60,1.60 6.40,1.60"/> </edge> <edge id="B0B1" from="B0" to="B1" priority="1"> <lane id="B0B1_0" index="0" speed="13.89" length="87.20" shape="104.80,6.40 104.80,93.60"/> <lane id="B0B1_1" index="1" speed="13.89" length="87.20" shape="101.60,6.40 101.60,93.60"/> </edge> <edge id="B1A1" from="B1" to="A1" priority="1"> <lane id="B1A1_0" index="0" speed="13.89" length="87.20" shape="93.60,104.80 6.40,104.80"/> <lane id="B1A1_1" index="1" speed="13.89" length="87.20" shape="93.60,101.60 6.40,101.60"/> </edge> <edge id="B1B0" from="B1" to="B0" priority="1"> <lane id="B1B0_0" index="0" speed="13.89" length="87.20" shape="95.20,93.60 95.20,6.40"/> <lane id="B1B0_1" index="1" speed="13.89" length="87.20" shape="98.40,93.60 98.40,6.40"/> </edge> <tlLogic id="A0" type="static" programID="0" offset="0"> <phase duration="90" state="GGGG"/> </tlLogic> <tlLogic id="A1" type="static" programID="0" offset="0"> <phase duration="90" state="GGGG"/> </tlLogic> <tlLogic id="B0" type="static" programID="0" offset="0"> <phase duration="90" state="GGGG"/> </tlLogic> <tlLogic id="B1" type="static" programID="0" offset="0"> <phase duration="90" state="GGGG"/> </tlLogic> <junction id="A0" type="traffic_light" x="0.00" y="0.00" incLanes="A1A0_0 A1A0_1 B0A0_0 B0A0_1" intLanes=":A0_0_0 :A0_0_1 :A0_2_0 :A0_2_1" shape="-6.40,6.40 6.40,6.40 6.40,-6.40 2.49,-6.04 -0.71,-4.98 -3.20,-3.20 -4.98,-0.71 -6.04,2.49"> <request index="0" response="0000" foes="0000" cont="0"/> <request index="1" response="0000" foes="0000" cont="0"/> <request index="2" response="0000" foes="0000" cont="0"/> <request index="3" response="0000" foes="0000" cont="0"/> </junction> <junction id="A1" type="traffic_light" x="0.00" y="100.00" incLanes="B1A1_0 B1A1_1 A0A1_0 A0A1_1" intLanes=":A1_0_0 :A1_0_1 :A1_2_0 :A1_2_1" shape="6.40,106.40 6.40,93.60 -6.40,93.60 -6.04,97.51 -4.98,100.71 -3.20,103.20 -0.71,104.98 2.49,106.04"> <request index="0" response="0000" foes="0000" cont="0"/> <request index="1" response="0000" foes="0000" cont="0"/> <request index="2" response="0000" foes="0000" cont="0"/> <request index="3" response="0000" foes="0000" cont="0"/> </junction> <junction id="B0" type="traffic_light" x="100.00" y="0.00" incLanes="B1B0_0 B1B0_1 A0B0_0 A0B0_1" intLanes=":B0_0_0 :B0_0_1 :B0_2_0 :B0_2_1" shape="93.60,6.40 106.40,6.40 106.04,2.49 104.98,-0.71 103.20,-3.20 100.71,-4.98 97.51,-6.04 93.60,-6.40"> <request index="0" response="0000" foes="0000" cont="0"/> <request index="1" response="0000" foes="0000" cont="0"/> <request index="2" response="0000" foes="0000" cont="0"/> <request index="3" response="0000" foes="0000" cont="0"/> </junction> <junction id="B1" type="traffic_light" x="100.00" y="100.00" incLanes="B0B1_0 B0B1_1 A1B1_0 A1B1_1" intLanes=":B1_0_0 :B1_0_1 :B1_2_0 :B1_2_1" shape="106.40,93.60 93.60,93.60 93.60,106.40 97.51,106.04 100.71,104.98 103.20,103.20 104.98,100.71 106.04,97.51"> <request index="0" response="0000" foes="0000" cont="0"/> <request index="1" response="0000" foes="0000" cont="0"/> <request index="2" response="0000" foes="0000" cont="0"/> <request index="3" response="0000" foes="0000" cont="0"/> </junction> <connection from="A0A1" to="A1B1" fromLane="0" toLane="0" via=":A1_2_0" tl="A1" linkIndex="2" dir="r" state="O"/> <connection from="A0A1" to="A1B1" fromLane="1" toLane="1" via=":A1_2_1" tl="A1" linkIndex="3" dir="r" state="O"/> <connection from="A0B0" to="B0B1" fromLane="0" toLane="0" via=":B0_2_0" tl="B0" linkIndex="2" dir="l" state="O"/> <connection from="A0B0" to="B0B1" fromLane="1" toLane="1" via=":B0_2_1" tl="B0" linkIndex="3" dir="l" state="O"/> <connection from="A1A0" to="A0B0" fromLane="0" toLane="0" via=":A0_0_0" tl="A0" linkIndex="0" dir="l" state="O"/> <connection from="A1A0" to="A0B0" fromLane="1" toLane="1" via=":A0_0_1" tl="A0" linkIndex="1" dir="l" state="O"/> <connection from="A1B1" to="B1B0" fromLane="0" toLane="0" via=":B1_2_0" tl="B1" linkIndex="2" dir="r" state="O"/> <connection from="A1B1" to="B1B0" fromLane="1" toLane="1" via=":B1_2_1" tl="B1" linkIndex="3" dir="r" state="O"/> <connection from="B0A0" to="A0A1" fromLane="0" toLane="0" via=":A0_2_0" tl="A0" linkIndex="2" dir="r" state="O"/> <connection from="B0A0" to="A0A1" fromLane="1" toLane="1" via=":A0_2_1" tl="A0" linkIndex="3" dir="r" state="O"/> <connection from="B0B1" to="B1A1" fromLane="0" toLane="0" via=":B1_0_0" tl="B1" linkIndex="0" dir="l" state="O"/> <connection from="B0B1" to="B1A1" fromLane="1" toLane="1" via=":B1_0_1" tl="B1" linkIndex="1" dir="l" state="O"/> <connection from="B1A1" to="A1A0" fromLane="0" toLane="0" via=":A1_0_0" tl="A1" linkIndex="0" dir="l" state="O"/> <connection from="B1A1" to="A1A0" fromLane="1" toLane="1" via=":A1_0_1" tl="A1" linkIndex="1" dir="l" state="O"/> <connection from="B1B0" to="B0A0" fromLane="0" toLane="0" via=":B0_0_0" tl="B0" linkIndex="0" dir="r" state="O"/> <connection from="B1B0" to="B0A0" fromLane="1" toLane="1" via=":B0_0_1" tl="B0" linkIndex="1" dir="r" state="O"/> <connection from=":A0_0" to="A0B0" fromLane="0" toLane="0" dir="l" state="M"/> <connection from=":A0_0" to="A0B0" fromLane="1" toLane="1" dir="l" state="M"/> <connection from=":A0_2" to="A0A1" fromLane="0" toLane="0" dir="r" state="M"/> <connection from=":A0_2" to="A0A1" fromLane="1" toLane="1" dir="r" state="M"/> <connection from=":A1_0" to="A1A0" fromLane="0" toLane="0" dir="l" state="M"/> <connection from=":A1_0" to="A1A0" fromLane="1" toLane="1" dir="l" state="M"/> <connection from=":A1_2" to="A1B1" fromLane="0" toLane="0" dir="r" state="M"/> <connection from=":A1_2" to="A1B1" fromLane="1" toLane="1" dir="r" state="M"/> <connection from=":B0_0" to="B0A0" fromLane="0" toLane="0" dir="r" state="M"/> <connection from=":B0_0" to="B0A0" fromLane="1" toLane="1" dir="r" state="M"/> <connection from=":B0_2" to="B0B1" fromLane="0" toLane="0" dir="l" state="M"/> <connection from=":B0_2" to="B0B1" fromLane="1" toLane="1" dir="l" state="M"/> <connection from=":B1_0" to="B1A1" fromLane="0" toLane="0" dir="l" state="M"/> <connection from=":B1_0" to="B1A1" fromLane="1" toLane="1" dir="l" state="M"/> <connection from=":B1_2" to="B1B0" fromLane="0" toLane="0" dir="r" state="M"/> <connection from=":B1_2" to="B1B0" fromLane="1" toLane="1" dir="r" state="M"/> </net>
+<?xml version="1.0" encoding="UTF-8"?> <net version="1.9" junctionCornerDetail="5" limitTurnSpeed="5.50" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/net_file.xsd"> <location netOffset="0.00,0.00" convBoundary="0.00,0.00,100.00,100.00" origBoundary="0.00,0.00,100.00,100.00" projParameter="!"/> <edge id=":A0_0" function="internal"> <lane id=":A0_0_0" index="0" speed="6.51" length="9.03" shape="3.20,1.60 3.20,10.63"/> </edge> <edge id=":A0_1" function="internal"> <lane id=":A0_1_0" index="0" speed="7.33" length="13.10" shape="3.20,1.60 3.68,5.17 5.13,7.78 7.53,9.42 10.90,10.09"/> </edge> <edge id=":A0_2" function="internal"> <lane id=":A0_2_0" index="0" speed="6.51" length="9.03" shape="10.90,-3.20 1.87,-3.20"/> </edge> <edge id=":A0_3" function="internal"> <lane id=":A0_3_0" index="0" speed="7.33" length="13.10" shape="10.90,-3.20 7.33,-2.72 4.72,-1.27 3.08,1.13 2.41,4.50"/> </edge> <edge id="A0A1" from="A0" to="A1" priority="1" length="80.0"> <lane id="A0A1_0" index="0" speed="13.89" length="80.0" shape="3.20,10.63 3.20,91.60"/> </edge> <edge id="A0B0" from="A0" to="B0" priority="1" length="80.0"> <lane id="A0B0_0" index="0" speed="13.89" length="80.0" shape="4.53,-1.60 83.00,-1.60"/> </edge> <edge id="A1A0" from="A1" to="A0" priority="1" length="80.0"> <lane id="A1A0_0" index="0" speed="13.89" length="80.0" shape="-1.60,85.47 -1.60,4.50"/> </edge> <edge id="A1B1" from="A1" to="B1" priority="1" length="80.0"> <lane id="A1B1_0" index="0" speed="13.89" length="80.0" shape="10.90,88.40 83.00,88.40"/> </edge> <edge id="B0A0" from="B0" to="A0" priority="1" length="80.0"> <lane id="B0A0_0" index="0" speed="13.89" length="80.0" shape="86.47,3.20 10.90,3.20"/> </edge> <edge id="B0B1" from="B0" to="B1" priority="1" length="80.0"> <lane id="B0B1_0" index="0" speed="13.89" length="80.0" shape="90.70,10.90 90.70,85.50"/> </edge> <edge id="B1A1" from="B1" to="A1" priority="1" length="80.0"> <lane id="B1A1_0" index="0" speed="13.89" length="80.0" shape="86.47,93.20 10.90,93.20"/> </edge> <edge id="B1B0" from="B1" to="B0" priority="1" length="80.0"> <lane id="B1B0_0" index="0" speed="13.89" length="80.0" shape="87.80,85.50 87.80,-4.50"/> </edge> <tlLogic id="A0" type="static" programID="0" offset="0"> <phase duration="31" state="GrGr"/> <phase duration="4" state="yryr"/> <phase duration="31" state="rGrG"/> <phase duration="4" state="ryry"/> </tlLogic> <tlLogic id="A1" type="static" programID="0" offset="0"> <phase duration="31" state="GrGr"/> <phase duration="4" state="yryr"/> <phase duration="31" state="rGrG"/> <phase duration="4" state="ryry"/> </tlLogic> <tlLogic id="B0" type="static" programID="0" offset="0"> <phase duration="31" state="GrGr"/> <phase duration="4" state="yryr"/> <phase duration="31" state="rGrG"/> <phase duration="4" state="ryry"/> </tlLogic> <tlLogic id="B1" type="static" programID="0" offset="0"> <phase duration="31" state="GrGr"/> <phase duration="4" state="yryr"/> <phase duration="31" state="rGrG"/> <phase duration="4" state="ryry"/> </tlLogic> <junction id="A0" type="traffic_light" x="0.00" y="0.00" incLanes="A1A0_0 B0A0_0" intLanes=":A0_0_0 :A0_1_0 :A0_2_0 :A0_3_0" shape="0.00,10.63 5.20,10.63 5.37,8.34 5.87,6.54 6.70,5.20 7.87,4.31 9.37,3.87 11.20,3.20 11.20,-4.80 0.00,-4.80"> <request index="0" response="0000" foes="1000" cont="0"/> <request index="1" response="0100" foes="0100" cont="0"/> <request index="2" response="0000" foes="0010" cont="0"/> <request index="3" response="0001" foes="0001" cont="0"/> </junction> <junction id="A1" type="traffic_light" x="0.00" y="100.00" incLanes="A0A1_0 B1A1_0" intLanes=":A1_0_0 :A1_1_0 :A1_2_0 :A1_3_0" shape="0.00,98.40 5.20,98.40 5.37,96.34 5.87,94.54 6.70,93.20 7.87,92.31 9.37,91.87 11.20,91.20 11.20,86.20 0.00,86.20"> <request index="0" response="0000" foes="1000" cont="0"/> <request index="1" response="0100" foes="0100" cont="0"/> <request index="2" response="0000" foes="0010" cont="0"/> <request index="3" response="0001" foes="0001" cont="0"/> </junction> <junction id="B0" type="traffic_light" x="100.00" y="0.00" incLanes="B1B0_0 A0B0_0" intLanes=":B0_0_0 :B0_1_0 :B0_2_0 :B0_3_0" shape="85.80,0.00 92.80,0.00 92.57,-1.97 92.01,-3.64 91.13,-4.83 89.91,-5.54 88.37,-5.76 86.50,-5.50 86.50,0.50"> <request index="0" response="0000" foes="1000" cont="0"/> <request index="1" response="0100" foes="0100" cont="0"/> <request index="2" response="0000" foes="0010" cont="0"/> <request index="3" response="0001" foes="0001" cont="0"/> </junction> <junction id="B1" type="traffic_light" x="100.00" y="100.00" incLanes="B0B1_0 A1B1_0" intLanes=":B1_0_0 :B1_1_0 :B1_2_0 :B1_3_0" shape="85.80,95.00 92.80,95.00 92.57,93.03 92.01,91.36 91.13,90.17 89.91,89.46 88.37,89.24 86.50,89.50 86.50,95.50"> <request index="0" response="0000" foes="1000" cont="0"/> <request index="1" response="0100" foes="0100" cont="0"/> <request index="2" response="0000" foes="0010" cont="0"/> <request index="3" response="0001" foes="0001" cont="0"/> </junction> <connection from="A0A1" to="A1B1" fromLane="0" toLane="0" via=":A1_0_0" tl="A1" linkIndex="0" dir="s" state="O"/> <connection from="A0B0" to="B0B1" fromLane="0" toLane="0" via=":B0_2_0" tl="B0" linkIndex="2" dir="r" state="O"/> <connection from="A1A0" to="A0A1" fromLane="0" toLane="0" via=":A0_0_0" tl="A0" linkIndex="0" dir="s" state="O"/> <connection from="A1B1" to="B1B0" fromLane="0" toLane="0" via=":B1_2_0" tl="B1" linkIndex="2" dir="r" state="O"/> <connection from="B0A0" to="A0A1" fromLane="0" toLane="0" via=":A0_2_0" tl="A0" linkIndex="2" dir="r" state="O"/> <connection from="B0B1" to="B1A1" fromLane="0" toLane="0" via=":B1_0_0" tl="B1" linkIndex="0" dir="r" state="O"/> <connection from="B1A1" to="A1A0" fromLane="0" toLane="0" via=":A1_2_0" tl="A1" linkIndex="2" dir="r" state="O"/> <connection from="B1B0" to="B0A0" fromLane="0" toLane="0" via=":B0_0_0" tl="B0" linkIndex="0" dir="r" state="O"/> <connection from=":A0_0" to="A0A1" fromLane="0" toLane="0" dir="s" state="M"/> <connection from=":A0_1" to="A0B0" fromLane="0" toLane="0" dir="l" state="M"/> <connection from=":A0_2" to="A0A1" fromLane="0" toLane="0" dir="r" state="M"/> <connection from=":A0_3" to="A0B0" fromLane="0" toLane="0" dir="s" state="M"/> <connection from=":A1_0" to="A1B1" fromLane="0" toLane="0" dir="s" state="M"/> <connection from=":A1_1" to="A1A0" fromLane="0" toLane="0" dir="l" state="M"/> <connection from=":A1_2" to="A1B1" fromLane="0" toLane="0" dir="r" state="M"/> <connection from=":A1_3" to="A1A0" fromLane="0" toLane="0" dir="s" state="M"/> <connection from=":B0_0" to="B0A0" fromLane="0" toLane="0" dir="r" state="M"/> <connection from=":B0_1" to="B0B1" fromLane="0" toLane="0" dir="s" state="M"/> <connection from=":B0_2" to="B0B1" fromLane="0" toLane="0" dir="r" state="M"/> <connection from=":B0_3" to="B0A0" fromLane="0" toLane="0" dir="s" state="M"/> <connection from=":B1_0" to="B1A1" fromLane="0" toLane="0" dir="r" state="M"/> <connection from=":B1_1" to="B1B0" fromLane="0" toLane="0" dir="s" state="M"/> <connection from=":B1_2" to="B1B0" fromLane="0" toLane="0" dir="r" state="M"/> <connection from=":B1_3" to="B1A1" fromLane="0" toLane="0" dir="s" state="M"/> </net>
 ```
 
 # config\maps\traffic_grid.netccfg
@@ -55,7 +55,7 @@ venv/
 # config\maps\traffic_grid.sumocfg
 
 ```sumocfg
-<?xml version="1.0" encoding="UTF-8"?> <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd"> <input> <net-file value="traffic_grid.net.xml"/> <route-files value="traffic_grid_routes.rou.xml"/> </input> <time> <begin value="0"/> <end value="1000"/> </time> <processing> <time-to-teleport value="-1"/> </processing> <report> <verbose value="true"/> <no-step-log value="false"/> </report> </configuration>
+<?xml version="1.0" encoding="UTF-8"?> <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd"> <input> <net-file value="traffic_grid.net.xml"/> <route-files value="traffic_grid_routes.rou.xml"/> </input> <time> <begin value="0"/> <end value="1000"/> <step-length value="0.1"/> </time> <processing> <time-to-teleport value="-1"/> </processing> <report> <verbose value="true"/> <no-step-log value="false"/> </report> </configuration>
 ```
 
 # data\outputs\comparison_results.png
@@ -101,7 +101,7 @@ sys.path.append(str(project_root))
 def check_traffic_lights():
     """Check if the network has traffic lights defined"""
     # Path to the SUMO network file
-    net_file_path = os.path.join(project_root, "config", "maps", "grid_network.net.xml")
+    net_file_path = os.path.join(project_root, "config", "maps", "traffic_grid.net.xml")
     
     print(f"Checking network file: {net_file_path}")
     print(f"File exists: {os.path.exists(net_file_path)}")
@@ -334,7 +334,7 @@ from src.utils.sumo_integration import SumoSimulation
 
 def main():
     # Path to the SUMO configuration file
-    config_path = os.path.join(project_root, "config", "maps", "basic_grid.sumocfg")
+    config_path = os.path.join(project_root, "config", "maps", "traffic_grid.sumocfg")
     print(f"Looking for config file at: {config_path}")
     print(f"File exists: {os.path.exists(config_path)}")
     
@@ -353,24 +353,25 @@ def main():
             # Get and print simulation data
             vehicle_count = sim.get_vehicle_count()
             
-            # If there's a traffic light with ID "5", get its state
-            try:
-                tl_state = sim.get_traffic_light_state("5")
-                print(f"Step {i}: Vehicles: {vehicle_count}, Traffic Light: {tl_state}")
-            except:
-                print(f"Step {i}: Vehicles: {vehicle_count}")
+            # Get all traffic lights and their states
+            tl_ids = traci.trafficlight.getIDList()
+            print(f"Traffic lights: {tl_ids}")
+            
+            for tl_id in tl_ids[:1]:  # Just show the first traffic light
+                try:
+                    tl_state = sim.get_traffic_light_state(tl_id)
+                    print(f"Step {i}: Vehicles: {vehicle_count}, Traffic Light {tl_id}: {tl_state}")
+                except Exception as e:
+                    print(f"Error getting traffic light state: {e}")
             
             # Optional: change traffic light state occasionally
-            if i % 30 == 0 and i > 0:
+            if i % 30 == 0 and i > 0 and tl_ids:
                 try:
-                    # Toggle between N-S and E-W green phases
-                    if "G" in sim.get_traffic_light_state("5")[:2]:
-                        sim.set_traffic_light_state("5", "rrGG")
-                    else:
-                        sim.set_traffic_light_state("5", "GGrr")
+                    # Just flip the first traffic light to all red
+                    sim.set_traffic_light_state(tl_ids[0], "rrrr")
                     print(f"Changed traffic light state at step {i}")
-                except:
-                    pass
+                except Exception as e:
+                    print(f"Error changing traffic light state: {e}")
     
     finally:
         # Ensure the simulation is closed properly
@@ -410,7 +411,7 @@ def main():
     args = parser.parse_args()
     
     # Path to the SUMO configuration file
-    config_path = os.path.join(project_root, "config", "maps", "traffic_grid.sumocfg")  
+    config_path = os.path.join(project_root, "config", "maps", "traffic_grid.sumocfg")
     
     print(f"Starting visualization with config: {config_path}")
     print(f"Config file exists: {os.path.exists(config_path)}")
@@ -847,53 +848,63 @@ def _initialize_traffic_light_positions(self):
         tl_ids = traci.trafficlight.getIDList()
         print(f"Found traffic lights: {tl_ids}")
         
+        if not tl_ids:
+            print("WARNING: No traffic lights found in the simulation!")
+            print("This might be because you're using a network without traffic lights.")
+            print("Please check your SUMO network configuration.")
+            return
+        
         for tl_id in tl_ids:
-            # First, try to match with a junction directly
-            if tl_id in self.network_parser.nodes:
-                self.traffic_light_positions[tl_id] = self.network_parser.nodes[tl_id]
-                print(f"Positioned traffic light {tl_id} at junction position")
-                continue
-            
-            # If not found, try to find any junction that might control this light
-            for junction_id in self.network_parser.nodes:
-                if junction_id.startswith(tl_id) or tl_id.startswith(junction_id):
-                    self.traffic_light_positions[tl_id] = self.network_parser.nodes[junction_id]
-                    print(f"Positioned traffic light {tl_id} at related junction {junction_id}")
-                    continue
-            
-            # As a last resort, get controlled links
+            # Get all controlled links for this traffic light
             try:
-                links = traci.trafficlight.getControlledLinks(tl_id)
-                if links and links[0]:
+                controlled_links = traci.trafficlight.getControlledLinks(tl_id)
+                print(f"Traffic light {tl_id} controls {len(controlled_links)} links")
+                
+                # Try to find the junction position directly
+                if tl_id in self.network_parser.nodes:
+                    self.traffic_light_positions[tl_id] = self.network_parser.nodes[tl_id]
+                    print(f"Positioned traffic light {tl_id} at junction position")
+                    continue
+                
+                # If we have links, use the position of the first one
+                if controlled_links and controlled_links[0]:
                     # Get the incoming lane
-                    incoming_lane = links[0][0][0]
+                    try:
+                        incoming_lane = controlled_links[0][0][0]
+                        print(f"Using incoming lane {incoming_lane} for traffic light {tl_id}")
+                        
+                        # Get the lane shape
+                        lane_shape = traci.lane.getShape(incoming_lane)
+                        
+                        # Use the last point of the lane shape (closest to the junction)
+                        if lane_shape:
+                            self.traffic_light_positions[tl_id] = lane_shape[-1]
+                            print(f"Positioned traffic light {tl_id} at lane endpoint")
+                            continue
+                    except Exception as e:
+                        print(f"Error getting lane shape: {e}")
+                
+                # As a fallback, get the controlled junctions
+                try:
+                    controlled_junctions = traci.trafficlight.getControlledJunctions(tl_id)
+                    for junction_id in controlled_junctions:
+                        if junction_id in self.network_parser.nodes:
+                            self.traffic_light_positions[tl_id] = self.network_parser.nodes[junction_id]
+                            print(f"Positioned traffic light {tl_id} at controlled junction {junction_id}")
+                            break
+                except Exception as e:
+                    print(f"Error getting controlled junctions: {e}")
+                
+                if tl_id not in self.traffic_light_positions:
+                    print(f"WARNING: Could not determine position for traffic light {tl_id}")
                     
-                    # Get the lane shape
-                    lane_shape = traci.lane.getShape(incoming_lane)
-                    
-                    # Use the last point of the lane shape (closest to the junction)
-                    if lane_shape:
-                        self.traffic_light_positions[tl_id] = lane_shape[-1]
-                        print(f"Positioned traffic light {tl_id} at lane endpoint")
-                        continue
-            except Exception as link_error:
-                print(f"Error getting controlled links for {tl_id}: {link_error}")
-            
-            print(f"Warning: Could not determine position for traffic light {tl_id}")
+            except Exception as e:
+                print(f"Error processing traffic light {tl_id}: {e}")
         
         print(f"Initialized {len(self.traffic_light_positions)} traffic light positions out of {len(tl_ids)} traffic lights")
         
-        # If we didn't find any traffic lights but the network has junctions, create traffic lights at junctions
-        if not self.traffic_light_positions and self.network_parser.nodes:
-            print("No traffic lights were found, creating default ones at junctions")
-            for junction_id, position in self.network_parser.nodes.items():
-                # Only use main junctions (not internal ones)
-                if not junction_id.startswith(':'):
-                    self.traffic_light_positions[junction_id] = position
-                    print(f"Created default traffic light at junction {junction_id}")
-    
     except Exception as e:
-        print(f"Error initializing traffic light positions: {e}")
+        print(f"Error initializing traffic light positions: {e}")   
     
     def _update_stats(self):
         """Update simulation statistics."""
@@ -1064,18 +1075,42 @@ def draw_debug_info(self):
         for tl_id in tl_ids[:5]:  # Show first 5 traffic lights
             try:
                 state = traci.trafficlight.getRedYellowGreenState(tl_id)
+                program = traci.trafficlight.getProgram(tl_id)
+                phase = traci.trafficlight.getPhase(tl_id)
                 phase_duration = traci.trafficlight.getPhaseDuration(tl_id)
                 time_to_change = traci.trafficlight.getNextSwitch(tl_id) - traci.simulation.getTime()
                 
-                text = f"{tl_id}: {state} (next change in {time_to_change:.1f}s)"
-                self.visualization.draw_text(text, 15, y_offset, (0, 0, 100))
+                # Basic traffic light info
+                self.visualization.draw_text(f"TL {tl_id} (Program {program}, Phase {phase}):", 15, y_offset, (0, 0, 100))
+                y_offset += 20
+                
+                # Show the state with colored characters
+                self.visualization.draw_text("  State: ", 20, y_offset, (0, 0, 0))
+                x_offset = 80
+                for i, c in enumerate(state):
+                    color = (0, 0, 0)
+                    if c == 'r': color = (255, 0, 0)
+                    elif c == 'y': color = (255, 255, 0)
+                    elif c == 'g' or c == 'G': color = (0, 255, 0)
+                    
+                    self.visualization.draw_text(c, x_offset + i*15, y_offset, color)
+                
+                y_offset += 20
+                
+                # Show timer
+                self.visualization.draw_text(f"  Next change in: {time_to_change:.1f}s (Phase duration: {phase_duration}s)", 
+                                            20, y_offset, (0, 0, 0))
                 y_offset += 20
                 
                 # Show position information
                 if tl_id in self.traffic_light_positions:
                     pos = self.traffic_light_positions[tl_id]
-                    self.visualization.draw_text(f"  Position: ({pos[0]:.1f}, {pos[1]:.1f})", 25, y_offset, (100, 100, 100))
+                    self.visualization.draw_text(f"  Position: ({pos[0]:.1f}, {pos[1]:.1f})", 20, y_offset, (100, 100, 100))
                     y_offset += 20
+                
+                # Add some padding between traffic lights
+                y_offset += 5
+                
             except Exception as e:
                 self.visualization.draw_text(f"{tl_id}: Error getting state - {str(e)}", 15, y_offset, (255, 0, 0))
                 y_offset += 20

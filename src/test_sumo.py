@@ -10,7 +10,7 @@ from src.utils.sumo_integration import SumoSimulation
 
 def main():
     # Path to the SUMO configuration file
-    config_path = os.path.join(project_root, "config", "maps", "basic_grid.sumocfg")
+    config_path = os.path.join(project_root, "config", "maps", "traffic_grid.sumocfg")
     print(f"Looking for config file at: {config_path}")
     print(f"File exists: {os.path.exists(config_path)}")
     
@@ -29,24 +29,25 @@ def main():
             # Get and print simulation data
             vehicle_count = sim.get_vehicle_count()
             
-            # If there's a traffic light with ID "5", get its state
-            try:
-                tl_state = sim.get_traffic_light_state("5")
-                print(f"Step {i}: Vehicles: {vehicle_count}, Traffic Light: {tl_state}")
-            except:
-                print(f"Step {i}: Vehicles: {vehicle_count}")
+            # Get all traffic lights and their states
+            tl_ids = traci.trafficlight.getIDList()
+            print(f"Traffic lights: {tl_ids}")
+            
+            for tl_id in tl_ids[:1]:  # Just show the first traffic light
+                try:
+                    tl_state = sim.get_traffic_light_state(tl_id)
+                    print(f"Step {i}: Vehicles: {vehicle_count}, Traffic Light {tl_id}: {tl_state}")
+                except Exception as e:
+                    print(f"Error getting traffic light state: {e}")
             
             # Optional: change traffic light state occasionally
-            if i % 30 == 0 and i > 0:
+            if i % 30 == 0 and i > 0 and tl_ids:
                 try:
-                    # Toggle between N-S and E-W green phases
-                    if "G" in sim.get_traffic_light_state("5")[:2]:
-                        sim.set_traffic_light_state("5", "rrGG")
-                    else:
-                        sim.set_traffic_light_state("5", "GGrr")
+                    # Just flip the first traffic light to all red
+                    sim.set_traffic_light_state(tl_ids[0], "rrrr")
                     print(f"Changed traffic light state at step {i}")
-                except:
-                    pass
+                except Exception as e:
+                    print(f"Error changing traffic light state: {e}")
     
     finally:
         # Ensure the simulation is closed properly

@@ -130,53 +130,63 @@ def _initialize_traffic_light_positions(self):
         tl_ids = traci.trafficlight.getIDList()
         print(f"Found traffic lights: {tl_ids}")
         
+        if not tl_ids:
+            print("WARNING: No traffic lights found in the simulation!")
+            print("This might be because you're using a network without traffic lights.")
+            print("Please check your SUMO network configuration.")
+            return
+        
         for tl_id in tl_ids:
-            # First, try to match with a junction directly
-            if tl_id in self.network_parser.nodes:
-                self.traffic_light_positions[tl_id] = self.network_parser.nodes[tl_id]
-                print(f"Positioned traffic light {tl_id} at junction position")
-                continue
-            
-            # If not found, try to find any junction that might control this light
-            for junction_id in self.network_parser.nodes:
-                if junction_id.startswith(tl_id) or tl_id.startswith(junction_id):
-                    self.traffic_light_positions[tl_id] = self.network_parser.nodes[junction_id]
-                    print(f"Positioned traffic light {tl_id} at related junction {junction_id}")
-                    continue
-            
-            # As a last resort, get controlled links
+            # Get all controlled links for this traffic light
             try:
-                links = traci.trafficlight.getControlledLinks(tl_id)
-                if links and links[0]:
+                controlled_links = traci.trafficlight.getControlledLinks(tl_id)
+                print(f"Traffic light {tl_id} controls {len(controlled_links)} links")
+                
+                # Try to find the junction position directly
+                if tl_id in self.network_parser.nodes:
+                    self.traffic_light_positions[tl_id] = self.network_parser.nodes[tl_id]
+                    print(f"Positioned traffic light {tl_id} at junction position")
+                    continue
+                
+                # If we have links, use the position of the first one
+                if controlled_links and controlled_links[0]:
                     # Get the incoming lane
-                    incoming_lane = links[0][0][0]
+                    try:
+                        incoming_lane = controlled_links[0][0][0]
+                        print(f"Using incoming lane {incoming_lane} for traffic light {tl_id}")
+                        
+                        # Get the lane shape
+                        lane_shape = traci.lane.getShape(incoming_lane)
+                        
+                        # Use the last point of the lane shape (closest to the junction)
+                        if lane_shape:
+                            self.traffic_light_positions[tl_id] = lane_shape[-1]
+                            print(f"Positioned traffic light {tl_id} at lane endpoint")
+                            continue
+                    except Exception as e:
+                        print(f"Error getting lane shape: {e}")
+                
+                # As a fallback, get the controlled junctions
+                try:
+                    controlled_junctions = traci.trafficlight.getControlledJunctions(tl_id)
+                    for junction_id in controlled_junctions:
+                        if junction_id in self.network_parser.nodes:
+                            self.traffic_light_positions[tl_id] = self.network_parser.nodes[junction_id]
+                            print(f"Positioned traffic light {tl_id} at controlled junction {junction_id}")
+                            break
+                except Exception as e:
+                    print(f"Error getting controlled junctions: {e}")
+                
+                if tl_id not in self.traffic_light_positions:
+                    print(f"WARNING: Could not determine position for traffic light {tl_id}")
                     
-                    # Get the lane shape
-                    lane_shape = traci.lane.getShape(incoming_lane)
-                    
-                    # Use the last point of the lane shape (closest to the junction)
-                    if lane_shape:
-                        self.traffic_light_positions[tl_id] = lane_shape[-1]
-                        print(f"Positioned traffic light {tl_id} at lane endpoint")
-                        continue
-            except Exception as link_error:
-                print(f"Error getting controlled links for {tl_id}: {link_error}")
-            
-            print(f"Warning: Could not determine position for traffic light {tl_id}")
+            except Exception as e:
+                print(f"Error processing traffic light {tl_id}: {e}")
         
         print(f"Initialized {len(self.traffic_light_positions)} traffic light positions out of {len(tl_ids)} traffic lights")
         
-        # If we didn't find any traffic lights but the network has junctions, create traffic lights at junctions
-        if not self.traffic_light_positions and self.network_parser.nodes:
-            print("No traffic lights were found, creating default ones at junctions")
-            for junction_id, position in self.network_parser.nodes.items():
-                # Only use main junctions (not internal ones)
-                if not junction_id.startswith(':'):
-                    self.traffic_light_positions[junction_id] = position
-                    print(f"Created default traffic light at junction {junction_id}")
-    
     except Exception as e:
-        print(f"Error initializing traffic light positions: {e}")
+        print(f"Error initializing traffic light positions: {e}")   
     
     def _update_stats(self):
         """Update simulation statistics."""
@@ -347,18 +357,42 @@ def draw_debug_info(self):
         for tl_id in tl_ids[:5]:  # Show first 5 traffic lights
             try:
                 state = traci.trafficlight.getRedYellowGreenState(tl_id)
+                program = traci.trafficlight.getProgram(tl_id)
+                phase = traci.trafficlight.getPhase(tl_id)
                 phase_duration = traci.trafficlight.getPhaseDuration(tl_id)
                 time_to_change = traci.trafficlight.getNextSwitch(tl_id) - traci.simulation.getTime()
                 
-                text = f"{tl_id}: {state} (next change in {time_to_change:.1f}s)"
-                self.visualization.draw_text(text, 15, y_offset, (0, 0, 100))
+                # Basic traffic light info
+                self.visualization.draw_text(f"TL {tl_id} (Program {program}, Phase {phase}):", 15, y_offset, (0, 0, 100))
+                y_offset += 20
+                
+                # Show the state with colored characters
+                self.visualization.draw_text("  State: ", 20, y_offset, (0, 0, 0))
+                x_offset = 80
+                for i, c in enumerate(state):
+                    color = (0, 0, 0)
+                    if c == 'r': color = (255, 0, 0)
+                    elif c == 'y': color = (255, 255, 0)
+                    elif c == 'g' or c == 'G': color = (0, 255, 0)
+                    
+                    self.visualization.draw_text(c, x_offset + i*15, y_offset, color)
+                
+                y_offset += 20
+                
+                # Show timer
+                self.visualization.draw_text(f"  Next change in: {time_to_change:.1f}s (Phase duration: {phase_duration}s)", 
+                                            20, y_offset, (0, 0, 0))
                 y_offset += 20
                 
                 # Show position information
                 if tl_id in self.traffic_light_positions:
                     pos = self.traffic_light_positions[tl_id]
-                    self.visualization.draw_text(f"  Position: ({pos[0]:.1f}, {pos[1]:.1f})", 25, y_offset, (100, 100, 100))
+                    self.visualization.draw_text(f"  Position: ({pos[0]:.1f}, {pos[1]:.1f})", 20, y_offset, (100, 100, 100))
                     y_offset += 20
+                
+                # Add some padding between traffic lights
+                y_offset += 5
+                
             except Exception as e:
                 self.visualization.draw_text(f"{tl_id}: Error getting state - {str(e)}", 15, y_offset, (255, 0, 0))
                 y_offset += 20

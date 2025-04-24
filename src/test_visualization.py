@@ -25,7 +25,7 @@ def main():
     args = parser.parse_args()
     
     # Path to the SUMO configuration file
-    config_path = os.path.join(project_root, "config", "maps", "traffic_grid.sumocfg")  
+    config_path = os.path.join(project_root, "config", "maps", "traffic_grid.sumocfg")
     
     print(f"Starting visualization with config: {config_path}")
     print(f"Config file exists: {os.path.exists(config_path)}")

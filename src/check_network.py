@@ -10,7 +10,7 @@ sys.path.append(str(project_root))
 def check_traffic_lights():
     """Check if the network has traffic lights defined"""
     # Path to the SUMO network file
-    net_file_path = os.path.join(project_root, "config", "maps", "grid_network.net.xml")
+    net_file_path = os.path.join(project_root, "config", "maps", "traffic_grid.net.xml")
     
     print(f"Checking network file: {net_file_path}")
     print(f"File exists: {os.path.exists(net_file_path)}")
