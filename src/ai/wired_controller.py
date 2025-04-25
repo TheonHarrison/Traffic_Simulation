@@ -72,10 +72,15 @@ class WiredController(TrafficController):
             
             # Compare vehicle counts and adjust timing if significant difference
             # (This is a simplified AI approach - we'd use more sophisticated methods in a real system)
-            if north_south_count > east_west_count * 1.5:
+            if north_south_count > east_west_count * 1.5 and north_south_count > 0:
                 # Heavy north-south traffic - extend green time for north-south
                 if current_phase == "GrYr":
-                    self.phase_durations[junction_id]["GrYr"] = min(60.0, 30.0 + (north_south_count / east_west_count) * 10)
+                    # Safely calculate new duration avoiding division by zero
+                    if east_west_count > 0:
+                        self.phase_durations[junction_id]["GrYr"] = min(60.0, 30.0 + (north_south_count / east_west_count) * 10)
+                    else:
+                        # Maximum green time if no east-west traffic
+                        self.phase_durations[junction_id]["GrYr"] = 60.0
                 else:
                     # Move to north-south green phase
                     next_phase_index = (self.phase_sequence.index(current_phase) + 1) % len(self.phase_sequence)
@@ -86,10 +91,15 @@ class WiredController(TrafficController):
                     
                     return next_phase
             
-            elif east_west_count > north_south_count * 1.5:
+            elif east_west_count > north_south_count * 1.5 and east_west_count > 0:
                 # Heavy east-west traffic - extend green time for east-west
                 if current_phase == "rGry":
-                    self.phase_durations[junction_id]["rGry"] = min(60.0, 30.0 + (east_west_count / north_south_count) * 10)
+                    # Safely calculate new duration avoiding division by zero
+                    if north_south_count > 0:
+                        self.phase_durations[junction_id]["rGry"] = min(60.0, 30.0 + (east_west_count / north_south_count) * 10)
+                    else:
+                        # Maximum green time if no north-south traffic
+                        self.phase_durations[junction_id]["rGry"] = 60.0
                 else:
                     # Move to east-west green phase
                     next_phase_index = (self.phase_sequence.index(current_phase) + 1) % len(self.phase_sequence)

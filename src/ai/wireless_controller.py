@@ -153,7 +153,11 @@ class WirelessController(TrafficController):
             # Decision logic based on phase and priorities
             if current_phase == "GrYr" and ns_priority > ew_priority * 1.25:
                 # Extend north-south green time if priority is significantly higher
-                self.phase_durations[junction_id]["GrYr"] = min(60.0, 30.0 + (ns_priority / max(1, ew_priority)) * 5)
+                if ew_priority > 0:
+                    self.phase_durations[junction_id]["GrYr"] = min(60.0, 30.0 + (ns_priority / ew_priority) * 5)
+                else:
+                    # Max green time if no east-west priority
+                    self.phase_durations[junction_id]["GrYr"] = 60.0
                 
                 # Record response time
                 self.response_times.append(time.time() - response_start)
@@ -164,7 +168,11 @@ class WirelessController(TrafficController):
                 
             elif current_phase == "rGry" and ew_priority > ns_priority * 1.25:
                 # Extend east-west green time if priority is significantly higher
-                self.phase_durations[junction_id]["rGry"] = min(60.0, 30.0 + (ew_priority / max(1, ns_priority)) * 5)
+                if ns_priority > 0:
+                    self.phase_durations[junction_id]["rGry"] = min(60.0, 30.0 + (ew_priority / ns_priority) * 5)
+                else:
+                    # Max green time if no north-south priority
+                    self.phase_durations[junction_id]["rGry"] = 60.0
                 
                 # Record response time
                 self.response_times.append(time.time() - response_start)
