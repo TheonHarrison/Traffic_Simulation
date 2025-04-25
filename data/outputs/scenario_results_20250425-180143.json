@@ -1,0 +1,117 @@
+{
+    "heavy_traffic.rou": {
+        "Wired AI": {
+            "avg_waiting_time": 25.776545604860498,
+            "avg_speed": 1.2408279154651143,
+            "throughput": 199,
+            "avg_response_time": 0.0,
+            "avg_decision_time": 101.07154463544305
+        },
+        "Wireless AI": {
+            "avg_waiting_time": 288.7400834222425,
+            "avg_speed": 0.4597966556811289,
+            "throughput": 15,
+            "avg_response_time": 0.0,
+            "avg_decision_time": 96.52468465989637
+        },
+        "Traditional": {
+            "avg_waiting_time": 16.714404345402773,
+            "avg_speed": 1.516614608466027,
+            "throughput": 236,
+            "avg_response_time": 0.0,
+            "avg_decision_time": 0.0
+        }
+    },
+    "light_traffic.rou": {
+        "Wired AI": {
+            "avg_waiting_time": 25.776545604860498,
+            "avg_speed": 1.2408279154651143,
+            "throughput": 199,
+            "avg_response_time": 0.0,
+            "avg_decision_time": 101.05163374064881
+        },
+        "Wireless AI": {
+            "avg_waiting_time": 288.7400834222425,
+            "avg_speed": 0.4597966556811289,
+            "throughput": 15,
+            "avg_response_time": 0.0,
+            "avg_decision_time": 96.08715580355737
+        },
+        "Traditional": {
+            "avg_waiting_time": 16.714404345402773,
+            "avg_speed": 1.516614608466027,
+            "throughput": 236,
+            "avg_response_time": 0.0,
+            "avg_decision_time": 0.0
+        }
+    },
+    "moderate_traffic.rou": {
+        "Wired AI": {
+            "avg_waiting_time": 25.776545604860498,
+            "avg_speed": 1.2408279154651143,
+            "throughput": 199,
+            "avg_response_time": 0.0,
+            "avg_decision_time": 101.06403592192096
+        },
+        "Wireless AI": {
+            "avg_waiting_time": 288.7400834222425,
+            "avg_speed": 0.4597966556811289,
+            "throughput": 15,
+            "avg_response_time": 0.0,
+            "avg_decision_time": 97.70556611399498
+        },
+        "Traditional": {
+            "avg_waiting_time": 16.714404345402773,
+            "avg_speed": 1.516614608466027,
+            "throughput": 236,
+            "avg_response_time": 0.0,
+            "avg_decision_time": 0.0
+        }
+    },
+    "peak_hour_morning.rou": {
+        "Wired AI": {
+            "avg_waiting_time": 25.776545604860498,
+            "avg_speed": 1.2408279154651143,
+            "throughput": 199,
+            "avg_response_time": 0.0,
+            "avg_decision_time": 101.02368578498746
+        },
+        "Wireless AI": {
+            "avg_waiting_time": 288.7400834222425,
+            "avg_speed": 0.4597966556811289,
+            "throughput": 15,
+            "avg_response_time": 0.0,
+            "avg_decision_time": 97.0730858464395
+        },
+        "Traditional": {
+            "avg_waiting_time": 16.714404345402773,
+            "avg_speed": 1.516614608466027,
+            "throughput": 236,
+            "avg_response_time": 0.0,
+            "avg_decision_time": 0.0
+        }
+    },
+    "scenario_template.rou": {
+        "Wired AI": {
+            "avg_waiting_time": 0,
+            "avg_speed": 0,
+            "throughput": 0,
+            "avg_response_time": 0.0,
+            "avg_decision_time": 101.07382599796567
+        },
+        "Wireless AI": {
+            "avg_waiting_time": 0,
+            "avg_speed": 0,
+            "throughput": 0,
+            "avg_response_time": 0.0,
+            "avg_decision_time": 51.04187237364905
+        },
+        "Traditional": {
+            "avg_waiting_time": 0,
+            "avg_speed": 0,
+            "throughput": 0,
+            "avg_response_time": 0.0,
+            "avg_decision_time": 0.0
+        }
+    }
+}
