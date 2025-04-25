@@ -14,7 +14,7 @@ class ControllerFactory:
         
         Args:
             controller_type (str): Type of controller to create
-                                  ('Wired AI', 'Wireless AI', or 'Traditional')
+                                ('Wired AI', 'Wireless AI', or 'Traditional')
             junction_ids (list): List of junction IDs to control
             **kwargs: Additional parameters to pass to the controller constructor
             

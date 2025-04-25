@@ -75,7 +75,7 @@ class WiredController(TrafficController):
             if north_south_count > east_west_count * 1.5 and north_south_count > 0:
                 # Heavy north-south traffic - extend green time for north-south
                 if current_phase == "GrYr":
-                    # Safely calculate new duration avoiding division by zero
+                    # Safely calculate new duration avoiding division by zero FIX
                     if east_west_count > 0:
                         self.phase_durations[junction_id]["GrYr"] = min(60.0, 30.0 + (north_south_count / east_west_count) * 10)
                     else:
