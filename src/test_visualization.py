@@ -9,6 +9,7 @@ project_root = Path(__file__).resolve().parent.parent
 sys.path.append(str(project_root))
 
 from src.ui.sumo_visualization import SumoVisualization
+from src.ai.controller_factory import ControllerFactory
 
 def main():
     # Parse command line arguments
@@ -40,15 +41,139 @@ def main():
     # Set the mode
     visualization.set_mode(args.mode)
     
-    # Run the visualization
-    visualization.run(steps=args.steps, delay_ms=args.delay)
+    # Start the visualization
+    if not visualization.start():
+        print("Failed to start visualization")
+        return
     
-    # Calculate and print elapsed time
-    elapsed_time = time.time() - start_time
-    print(f"Simulation completed in {elapsed_time:.2f} seconds")
-    
-    # Report performance metrics if the simulation ran long enough
-    if args.steps > 100:
+    try:
+        # Get traffic light IDs
+        import traci
+        tl_ids = traci.trafficlight.getIDList()
+        
+        if not tl_ids:
+            print("No traffic lights found in the simulation!")
+            visualization.close()
+            return
+        
+        # Create controller based on selected mode
+        controller = ControllerFactory.create_controller(args.mode, tl_ids)
+        
+        print(f"Created {args.mode} controller for traffic lights: {tl_ids}")
+        
+        # Run the simulation for specified number of steps
+        for step in range(args.steps):
+            # Collect traffic state
+            traffic_state = {}
+            for tl_id in tl_ids:
+                # Get incoming lanes for this traffic light
+                incoming_lanes = []
+                for connection in traci.trafficlight.getControlledLinks(tl_id):
+                    if connection and connection[0]:  # Check if connection exists
+                        incoming_lane = connection[0][0]
+                        if incoming_lane not in incoming_lanes:
+                            incoming_lanes.append(incoming_lane)
+                
+                # Count vehicles and collect metrics for each direction
+                north_count = south_count = east_count = west_count = 0
+                north_wait = south_wait = east_wait = west_wait = 0
+                north_queue = south_queue = east_queue = west_queue = 0
+                
+                for lane in incoming_lanes:
+                    # Determine direction based on lane ID
+                    direction = "unknown"
+                    if "A0A1" in lane or "B0B1" in lane:
+                        direction = "north"
+                    elif "A1A0" in lane or "B1B0" in lane:
+                        direction = "south"
+                    elif "A0B0" in lane or "A1B1" in lane:
+                        direction = "east"
+                    elif "B0A0" in lane or "B1A1" in lane:
+                        direction = "west"
+                    
+                    # Count vehicles on this lane
+                    vehicle_count = traci.lane.getLastStepVehicleNumber(lane)
+                    waiting_time = sum(traci.vehicle.getWaitingTime(v) for v in traci.lane.getLastStepVehicleIDs(lane))
+                    queue_length = traci.lane.getLastStepHaltingNumber(lane)
+                    
+                    if direction == "north":
+                        north_count += vehicle_count
+                        north_wait += waiting_time
+                        north_queue += queue_length
+                    elif direction == "south":
+                        south_count += vehicle_count
+                        south_wait += waiting_time
+                        south_queue += queue_length
+                    elif direction == "east":
+                        east_count += vehicle_count
+                        east_wait += waiting_time
+                        east_queue += queue_length
+                    elif direction == "west":
+                        west_count += vehicle_count
+                        west_wait += waiting_time
+                        west_queue += queue_length
+                
+                # Store traffic state for this junction
+                traffic_state[tl_id] = {
+                    'north_count': north_count,
+                    'south_count': south_count,
+                    'east_count': east_count,
+                    'west_count': west_count,
+                    'north_wait': north_wait / max(1, north_count) if north_count > 0 else 0,
+                    'south_wait': south_wait / max(1, south_count) if south_count > 0 else 0,
+                    'east_wait': east_wait / max(1, east_count) if east_count > 0 else 0,
+                    'west_wait': west_wait / max(1, west_count) if west_count > 0 else 0,
+                    'north_queue': north_queue,
+                    'south_queue': south_queue,
+                    'east_queue': east_queue,
+                    'west_queue': west_queue
+                }
+            
+            # Update controller with traffic state
+            controller.update_traffic_state(traffic_state)
+            
+            # Get current simulation time
+            current_time = traci.simulation.getTime()
+            
+            # Get phase decisions from controller for each junction
+            for tl_id in tl_ids:
+                phase = controller.get_phase_for_junction(tl_id, current_time)
+                
+                # Set traffic light phase in SUMO
+                current_sumo_state = traci.trafficlight.getRedYellowGreenState(tl_id)
+                
+                # Only update if phase is different
+                if phase != current_sumo_state:
+                    traci.trafficlight.setRedYellowGreenState(tl_id, phase)
+                    if step % 10 == 0:  # Don't print too much
+                        print(f"Step {step}: Traffic light {tl_id} changed to {phase}")
+            
+            # Display step in the simulation
+            if step % 20 == 0:
+                print(f"Step #{current_time:.2f}")
+            
+            # Step the visualization
+            result = visualization.step(args.delay)
+            if not result:
+                break
+        
+        # Close everything properly
+        visualization.close()
+        
+        # Calculate and print elapsed time
+        elapsed_time = time.time() - start_time
+        print(f"Simulation completed in {elapsed_time:.2f} seconds")
+        
+        # Report performance metrics
+        if controller.response_times:
+            avg_resp = sum(controller.response_times) / len(controller.response_times)
+            print(f"Average controller response time: {avg_resp * 1000:.2f} ms")
+        
+        if controller.decision_times:
+            avg_dec = sum(controller.decision_times) / len(controller.decision_times)
+            print(f"Average controller decision time: {avg_dec * 1000:.2f} ms")
+        
+        # Report other simulation metrics
         wait_times = visualization.performance_metrics["wait_times"]
         speeds = visualization.performance_metrics["speeds"]
         throughput = visualization.performance_metrics["throughput"]
@@ -64,6 +189,12 @@ def main():
         if throughput:
             total_throughput = sum(throughput)
             print(f"Total throughput: {total_throughput} vehicles")
+    
+    except Exception as e:
+        print(f"Error during simulation: {e}")
+        import traceback
+        traceback.print_exc()
+        visualization.close()
 
 if __name__ == "__main__":
     main()
