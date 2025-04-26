@@ -201,6 +201,10 @@ class EnhancedSumoVisualization(SumoVisualization):
                 except Exception as e:
                     print(f"Error rendering vehicle {vehicle_id}: {e}")
                     continue
+
+            # Render junctions
+            for junction_id in self.mapper.net_parser.nodes.keys():
+                self.traffic_renderer.render_junction(junction_id)
             
             # Render all traffic lights
             for tl_id in traci.trafficlight.getIDList():
@@ -218,10 +222,6 @@ class EnhancedSumoVisualization(SumoVisualization):
                 except Exception as e:
                     print(f"Error rendering traffic light {tl_id}: {e}")
                     continue
-            
-            # Render junctions
-            for junction_id in self.mapper.net_parser.nodes.keys():
-                self.traffic_renderer.render_junction(junction_id)
             
             # Render statistics
             formatted_stats = {

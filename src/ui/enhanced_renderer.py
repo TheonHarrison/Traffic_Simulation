@@ -156,7 +156,7 @@ class EnhancedTrafficRenderer:
         screen_x, screen_y = self._transform_coordinates(position[0], position[1])
         
         # Convert angle to pygame angle (SUMO: 0 = east, 90 = north, Pygame rotation: clockwise)
-        pygame_angle = 270 - angle  # This adjustment may need calibration based on sprite orientation
+        pygame_angle = -angle + 90 - angle  # This adjustment may need calibration based on sprite orientation
         
         # Determine if the vehicle is waiting
         is_waiting = waiting_time is not None and waiting_time > 0
