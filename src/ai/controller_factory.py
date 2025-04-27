@@ -1,6 +1,8 @@
 from src.ai.wired_controller import WiredController
 from src.ai.wireless_controller import WirelessController
 from src.ai.traditional_controller import TraditionalController
+from src.ai.reinforcement_learning.wired_rl_controller import WiredRLController
+from src.ai.reinforcement_learning.wireless_rl_controller import WirelessRLController
 
 class ControllerFactory:
     """
@@ -14,7 +16,8 @@ class ControllerFactory:
         
         Args:
             controller_type (str): Type of controller to create
-                                ('Wired AI', 'Wireless AI', or 'Traditional')
+                                ('Wired AI', 'Wireless AI', 'Traditional',
+                                 'Wired RL', 'Wireless RL')
             junction_ids (list): List of junction IDs to control
             **kwargs: Additional parameters to pass to the controller constructor
             
@@ -30,5 +33,9 @@ class ControllerFactory:
             return WirelessController(junction_ids, **kwargs)
         elif controller_type == "Traditional":
             return TraditionalController(junction_ids, **kwargs)
+        elif controller_type == "Wired RL":
+            return WiredRLController(junction_ids, **kwargs)
+        elif controller_type == "Wireless RL":
+            return WirelessRLController(junction_ids, **kwargs)
         else:
             raise ValueError(f"Invalid controller type: {controller_type}")
