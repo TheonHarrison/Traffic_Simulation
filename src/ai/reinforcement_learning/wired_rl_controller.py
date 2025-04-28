@@ -32,8 +32,12 @@ class WiredRLController(QLearningController):
             model_path (str): Path to load a pre-trained Q-table (optional)
             network_latency (float): Fixed network latency in seconds
         """
-        super().__init__(junction_ids, learning_rate, discount_factor, 
-                        exploration_rate, state_bins, model_path)
+        # Call the parent class constructor
+        super().__init__(junction_ids, learning_rate=learning_rate, 
+                        discount_factor=discount_factor, 
+                        exploration_rate=exploration_rate,
+                        state_bins=state_bins, 
+                        model_path=model_path)
         
         # Wired network simulation parameter
         self.network_latency = network_latency
@@ -41,6 +45,10 @@ class WiredRLController(QLearningController):
         # Statistics
         self.total_latency = 0
         self.decision_count = 0
+        
+        # Initialize traffic light state lengths dictionary if not exists
+        if not hasattr(self, 'tl_state_lengths'):
+            self.tl_state_lengths = {}
         
         print(f"Initialized Wired RL Controller with network_latency={network_latency}")
     

@@ -35,6 +35,7 @@ class WirelessRLController(QLearningController):
             computation_factor (float): Factor for additional computation time
             packet_loss_prob (float): Probability of packet loss (0-1)
         """
+        # Call the parent constructor with the correct number of arguments
         super().__init__(junction_ids, learning_rate, discount_factor, 
                         exploration_rate, state_bins, model_path)
         
@@ -49,7 +50,7 @@ class WirelessRLController(QLearningController):
         self.decision_count = 0
         
         print(f"Initialized Wireless RL Controller with base_latency={base_latency}, " 
-              f"computation_factor={computation_factor}, packet_loss_prob={packet_loss_prob}")
+                f"computation_factor={computation_factor}, packet_loss_prob={packet_loss_prob}")
     
     def _calculate_dynamic_latency(self, traffic_complexity):
         """
@@ -86,49 +87,38 @@ class WirelessRLController(QLearningController):
             return True
         return False
     
-    def decide_phase(self, junction_id, current_time):
-        """
-        Decide the next traffic light phase using RL and simulating wireless conditions.
+def decide_phase(self, junction_id, current_time):
+    """
+    Decide the next traffic light phase using RL and simulating wired conditions.
+    
+    Args:
+        junction_id (str): The ID of the junction to control
+        current_time (float): Current simulation time
         
-        Args:
-            junction_id (str): The ID of the junction to control
-            current_time (float): Current simulation time
-            
-        Returns:
-            str: The traffic light state to set
-        """
-        # Calculate traffic complexity for latency simulation
-        traffic_complexity = 0.5  # Default complexity
-        
-        if junction_id in self.traffic_state:
-            # Get vehicle counts
-            traffic_data = self.traffic_state[junction_id]
-            total_vehicles = (traffic_data.get('north_count', 0) + 
-                              traffic_data.get('south_count', 0) +
-                              traffic_data.get('east_count', 0) + 
-                              traffic_data.get('west_count', 0))
-            
-            # Normalize to 0-1 range (assuming max of 50 vehicles is high complexity)
-            traffic_complexity = min(1.0, total_vehicles / 50.0)
-        
-        # Simulate wireless latency
-        dynamic_latency = self._calculate_dynamic_latency(traffic_complexity)
-        self.total_latency += dynamic_latency
-        self.decision_count += 1
-        
-        # Simulate the network delay
-        time.sleep(dynamic_latency)
-        
-        # Simulate packet loss (random communication failure)
-        if self._simulate_packet_loss():
-            # If packet is lost, return the last action or a default action
-            if junction_id in self.last_actions and self.last_actions[junction_id] is not None:
-                return self.last_actions[junction_id]
+    Returns:
+        str: The traffic light state to set
+    """
+    # Simulate network latency for the wired connection
+    time.sleep(self.network_latency)
+    self.total_latency += self.network_latency
+    self.decision_count += 1
+    
+    # Get the phase from the base RL implementation
+    phase = super().decide_phase(junction_id, current_time)
+    
+    # Ensure the phase matches the expected length for this junction
+    if junction_id in self.tl_state_lengths:
+        expected_length = self.tl_state_lengths[junction_id]
+        if len(phase) != expected_length:
+            # Adjust phase length to match expected length
+            if len(phase) < expected_length:
+                # Repeat the pattern to match length
+                phase = phase * (expected_length // len(phase)) + phase[:expected_length % len(phase)]
             else:
-                return self.phase_sequence[0]  # Default to first phase
-        
-        # No packet loss, proceed with normal RL decision
-        return super().decide_phase(junction_id, current_time)
+                # Truncate to expected length
+                phase = phase[:expected_length]
+    
+    return phase
     
     def get_network_stats(self):
         """Get statistics about the simulated wireless network."""

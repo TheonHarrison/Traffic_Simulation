@@ -106,6 +106,14 @@ def train_controller(controller_type, config_path, episodes=50, steps_per_episod
             sim.close()
             return training_stats
         
+        # Store the state lengths for each traffic light
+        controller.tl_state_lengths = {}
+        for tl_id in tl_ids:
+            current_state = traci.trafficlight.getRedYellowGreenState(tl_id)
+            controller.tl_state_lengths[tl_id] = len(current_state)
+            if verbose:
+                print(f"Traffic light {tl_id} has state length: {len(current_state)}")
+        
         # Episode statistics
         episode_rewards = []
         total_waiting_time = 0
@@ -144,25 +152,25 @@ def train_controller(controller_type, config_path, episodes=50, steps_per_episod
                         direction = "west"
                     
                     # Count vehicles on this lane
-                    vehicle_count = traci.lane.getLastStepVehicleNumber(lane)
-                    vehicles = traci.lane.getLastStepVehicleIDs(lane)
-                    waiting_time = sum(traci.vehicle.getWaitingTime(v) for v in vehicles) if vehicles else 0
+                    vehicle_count_lane = traci.lane.getLastStepVehicleNumber(lane)
+                    vehicles_lane = traci.lane.getLastStepVehicleIDs(lane)
+                    waiting_time = sum(traci.vehicle.getWaitingTime(v) for v in vehicles_lane) if vehicles_lane else 0
                     queue_length = traci.lane.getLastStepHaltingNumber(lane)
                     
                     if direction == "north":
-                        north_count += vehicle_count
+                        north_count += vehicle_count_lane
                         north_wait += waiting_time
                         north_queue += queue_length
                     elif direction == "south":
-                        south_count += vehicle_count
+                        south_count += vehicle_count_lane
                         south_wait += waiting_time
                         south_queue += queue_length
                     elif direction == "east":
-                        east_count += vehicle_count
+                        east_count += vehicle_count_lane
                         east_wait += waiting_time
                         east_queue += queue_length
                     elif direction == "west":
-                        west_count += vehicle_count
+                        west_count += vehicle_count_lane
                         west_wait += waiting_time
                         west_queue += queue_length
                 
@@ -195,16 +203,34 @@ def train_controller(controller_type, config_path, episodes=50, steps_per_episod
                 # Set traffic light phase in SUMO
                 current_sumo_state = traci.trafficlight.getRedYellowGreenState(tl_id)
                 
+                # Adjust phase length if needed
+                if len(phase) != len(current_sumo_state):
+                    if verbose:
+                        print(f"Adjusting phase length for {tl_id}. Expected {len(current_sumo_state)}, got {len(phase)}.")
+                    if len(phase) < len(current_sumo_state):
+                        # Repeat the pattern
+                        phase = phase * (len(current_sumo_state) // len(phase)) + phase[:len(current_sumo_state) % len(phase)]
+                    else:
+                        # Truncate
+                        phase = phase[:len(current_sumo_state)]
+                
                 # Only update if phase is different
                 if phase != current_sumo_state:
-                    traci.trafficlight.setRedYellowGreenState(tl_id, phase)
+                    try:
+                        traci.trafficlight.setRedYellowGreenState(tl_id, phase)
+                    except Exception as e:
+                        print(f"Error setting traffic light state for {tl_id}: {e}")
+                        print(f"Current state: {current_sumo_state} (len={len(current_sumo_state)})")
+                        print(f"Attempted phase: {phase} (len={len(phase)})")
+                        # Continue with next traffic light without crashing
+                        continue
             
             # Collect metrics
-            vehicles = traci.vehicle.getIDList()
-            if vehicles:
-                total_waiting_time += sum(traci.vehicle.getWaitingTime(v) for v in vehicles)
-                total_speed += sum(traci.vehicle.getSpeed(v) for v in vehicles)
-                vehicle_count += len(vehicles)
+            vehicles_all = traci.vehicle.getIDList()
+            if vehicles_all:
+                total_waiting_time += sum(traci.vehicle.getWaitingTime(v) for v in vehicles_all)
+                total_speed += sum(traci.vehicle.getSpeed(v) for v in vehicles_all)
+                vehicle_count += len(vehicles_all)
             
             throughput += traci.simulation.getArrivedNumber()
             
@@ -333,409 +359,6 @@ def plot_learning_curves(stats, output_dir, controller_type):
     plt.savefig(os.path.join(output_dir, f"{controller_name}_exploration_rate.png"))
     plt.close()
 
-def main():
-    """Main function to train RL controllers."""
-    parser = argparse.ArgumentParser(description='Train reinforcement learning traffic controllers')
-    parser.add_argument('--controller', type=str, default="Wired RL",
-                        choices=["Wired RL", "Wireless RL"],
-                        help='Type of controller to train')
-    parser.add_argument('--scenario', type=str, default="light_traffic",
-                        help='Traffic scenario to use for training')
-    parser.add_argument('--episodes', type=int, default=20,
-                        help='Number of training episodes')
-    parser.add_argument('--steps', type=int, default=500,
-                        help='Steps per episode')
-    parser.add_argument('--learning-rate', type=float, default=0.1,
-                        help='Learning rate for the RL algorithm')
-    parser.add_argument('--discount-factor', type=float, default=0.9,
-                        help='Discount factor for the RL algorithm')
-    parser.add_argument('--exploration-rate', type=float, default=0.3,
-                        help='Initial exploration rate')
-    parser.add_argument('--exploration-decay', type=float, default=0.9,
-                        help='Exploration rate decay factor')
-    parser.add_argument('--output-dir', type=str, default=None,
-                        help='Directory to save trained models and results')
-    args = parser.parse_args()
-    
-    # Construct the path to the scenario
-    scenario_path = os.path.join(
-        project_root, "config", "scenarios", f"{args.scenario}.sumocfg")
-    
-    if not os.path.exists(scenario_path):
-        # Try to create a temp config if the scenario file exists
-        route_file = os.path.join(project_root, "config", "scenarios", f"{scenario}.rou.xml")
-        if os.path.exists(route_file):
-            scenario_path = create_temp_config(route_file)
-        else:
-            print(f"Scenario {scenario} not found.")
-            return {}
-    
-    # Initialize comparison results
-    comparison = {
-        "scenario": scenario,
-        "controllers": {},
-        "summary": {}
-    }
-    
-    # Run test for each controller
-    for controller_type in controllers:
-        # Get model path for this controller if provided
-        model_path = None
-        if model_paths and controller_type in model_paths:
-            model_path = model_paths[controller_type]
-        
-        print(f"\nTesting {controller_type} on scenario {scenario}...")
-        
-        # Run the test
-        metrics = run_test(
-            controller_type, 
-            scenario_path, 
-            model_path=model_path, 
-            steps=steps, 
-            gui=gui
-        )
-        
-        # Store results
-        comparison["controllers"][controller_type] = metrics
-    
-    # Calculate summary statistics for comparison
-    if comparison["controllers"]:
-        # Initialize summary metrics
-        summary = {
-            "avg_waiting_time": {},
-            "avg_speed": {},
-            "throughput": {},
-            "avg_decision_time": {},
-            "avg_response_time": {}
-        }
-        
-        # Extract metrics for each controller
-        for controller_type, metrics in comparison["controllers"].items():
-            summary["avg_waiting_time"][controller_type] = metrics.get("avg_waiting_time", 0)
-            summary["avg_speed"][controller_type] = metrics.get("avg_speed", 0)
-            summary["throughput"][controller_type] = metrics.get("throughput", 0)
-            summary["avg_decision_time"][controller_type] = metrics.get("avg_decision_time", 0) * 1000  # ms
-            summary["avg_response_time"][controller_type] = metrics.get("avg_response_time", 0) * 1000  # ms
-        
-        # Find the best controller for each metric
-        for metric, values in summary.items():
-            if not values:
-                continue
-                
-            if metric in ["avg_waiting_time", "avg_decision_time", "avg_response_time"]:
-                # Lower is better
-                best_controller = min(values.items(), key=lambda x: x[1])[0]
-            else:
-                # Higher is better
-                best_controller = max(values.items(), key=lambda x: x[1])[0]
-            
-            # Add best controller to summary
-            if "best_controller" not in summary:
-                summary["best_controller"] = {}
-            
-            summary["best_controller"][metric] = best_controller
-        
-        comparison["summary"] = summary
-    
-    # Save comparison results
-    timestamp = time.strftime("%Y%m%d-%H%M%S")
-    results_file = os.path.join(
-        output_dir, f"comparison_{scenario}_{timestamp}.json")
-    
-    with open(results_file, 'w') as f:
-        json.dump(comparison, f, indent=2)
-    
-    print(f"\nComparison results saved to {results_file}")
-    
-    # Generate comparison plots
-    generate_comparison_plots(comparison, output_dir, scenario)
-    
-    return comparison
-
-def generate_comparison_plots(comparison, output_dir, scenario):
-    """
-    Generate plots comparing controller performance.
-    
-    Args:
-        comparison (dict): Comparison results
-        output_dir (str): Directory to save plots
-        scenario (str): Scenario name
-    """
-    # Create plots directory
-    plots_dir = os.path.join(output_dir, "plots")
-    os.makedirs(plots_dir, exist_ok=True)
-    
-    # Check if we have controllers to compare
-    if not comparison["controllers"]:
-        print("No controllers to compare.")
-        return
-    
-    # Get controller names
-    controllers = list(comparison["controllers"].keys())
-    
-    # 1. Waiting Time Comparison
-    plt.figure(figsize=(10, 6))
-    wait_times = [comparison["controllers"][ctrl].get("avg_waiting_time", 0) for ctrl in controllers]
-    
-    bars = plt.bar(controllers, wait_times, color=['blue', 'green', 'red', 'orange', 'purple'][:len(controllers)])
-    
-    # Add values on top of bars
-    for bar, value in zip(bars, wait_times):
-        plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.1,
-                f'{value:.2f}', ha='center', va='bottom')
-    
-    plt.ylabel('Average Waiting Time (s)')
-    plt.title(f'Average Waiting Time Comparison - {scenario}')
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
-    plt.savefig(os.path.join(plots_dir, f"{scenario}_waiting_time_comparison.png"))
-    plt.close()
-    
-    # 2. Speed Comparison
-    plt.figure(figsize=(10, 6))
-    speeds = [comparison["controllers"][ctrl].get("avg_speed", 0) for ctrl in controllers]
-    
-    bars = plt.bar(controllers, speeds, color=['blue', 'green', 'red', 'orange', 'purple'][:len(controllers)])
-    
-    # Add values on top of bars
-    for bar, value in zip(bars, speeds):
-        plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.1,
-                f'{value:.2f}', ha='center', va='bottom')
-    
-    plt.ylabel('Average Speed (m/s)')
-    plt.title(f'Average Speed Comparison - {scenario}')
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
-    plt.savefig(os.path.join(plots_dir, f"{scenario}_speed_comparison.png"))
-    plt.close()
-    
-    # 3. Throughput Comparison
-    plt.figure(figsize=(10, 6))
-    throughput = [comparison["controllers"][ctrl].get("throughput", 0) for ctrl in controllers]
-    
-    bars = plt.bar(controllers, throughput, color=['blue', 'green', 'red', 'orange', 'purple'][:len(controllers)])
-    
-    # Add values on top of bars
-    for bar, value in zip(bars, throughput):
-        plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.5,
-                f'{value}', ha='center', va='bottom')
-    
-    plt.ylabel('Total Throughput (vehicles)')
-    plt.title(f'Throughput Comparison - {scenario}')
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
-    plt.savefig(os.path.join(plots_dir, f"{scenario}_throughput_comparison.png"))
-    plt.close()
-    
-    # 4. Response Time Comparison
-    plt.figure(figsize=(10, 6))
-    response_times = [comparison["controllers"][ctrl].get("avg_response_time", 0) * 1000 for ctrl in controllers]
-    
-    bars = plt.bar(controllers, response_times, color=['blue', 'green', 'red', 'orange', 'purple'][:len(controllers)])
-    
-    # Add values on top of bars
-    for bar, value in zip(bars, response_times):
-        plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.5,
-                f'{value:.2f}', ha='center', va='bottom')
-    
-    plt.ylabel('Average Response Time (ms)')
-    plt.title(f'Response Time Comparison - {scenario}')
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
-    plt.savefig(os.path.join(plots_dir, f"{scenario}_response_time_comparison.png"))
-    plt.close()
-    
-    # 5. All Metrics Radar Chart
-    # Normalize metrics for radar chart
-    metrics = ['Waiting Time', 'Speed', 'Throughput', 'Response Time', 'Decision Time']
-    
-    # Get values for each controller
-    controller_values = {}
-    for ctrl in controllers:
-        controller_values[ctrl] = [
-            comparison["controllers"][ctrl].get("avg_waiting_time", 0),
-            comparison["controllers"][ctrl].get("avg_speed", 0),
-            comparison["controllers"][ctrl].get("throughput", 0),
-            comparison["controllers"][ctrl].get("avg_response_time", 0) * 1000,
-            comparison["controllers"][ctrl].get("avg_decision_time", 0) * 1000
-        ]
-    
-    # Normalize values (min-max scaling)
-    normalized_values = {}
-    for i, metric in enumerate(metrics):
-        values = [controller_values[ctrl][i] for ctrl in controllers]
-        
-        # For waiting time and response/decision time, lower is better
-        if metric in ['Waiting Time', 'Response Time', 'Decision Time']:
-            if max(values) != min(values):
-                norm_values = [1 - (val - min(values)) / (max(values) - min(values)) for val in values]
-            else:
-                norm_values = [0.5 for _ in values]
-        else:
-            # For speed and throughput, higher is better
-            if max(values) != min(values):
-                norm_values = [(val - min(values)) / (max(values) - min(values)) for val in values]
-            else:
-                norm_values = [0.5 for _ in values]
-        
-        for j, ctrl in enumerate(controllers):
-            if ctrl not in normalized_values:
-                normalized_values[ctrl] = []
-            normalized_values[ctrl].append(norm_values[j])
-    
-    # Create radar chart
-    plt.figure(figsize=(10, 8))
-    
-    # Plot radar chart
-    angles = np.linspace(0, 2*np.pi, len(metrics), endpoint=False).tolist()
-    angles += angles[:1]  # Close the loop
-    
-    ax = plt.subplot(111, polar=True)
-    
-    for i, ctrl in enumerate(controllers):
-        values = normalized_values[ctrl]
-        values += values[:1]  # Close the loop
-        
-        ax.plot(angles, values, linewidth=2, label=ctrl)
-        ax.fill(angles, values, alpha=0.1)
-    
-    # Set labels
-    ax.set_thetagrids(np.degrees(angles[:-1]), metrics)
-    ax.set_ylim(0, 1)
-    ax.set_yticks([0.2, 0.4, 0.6, 0.8])
-    ax.set_yticklabels(['0.2', '0.4', '0.6', '0.8'])
-    ax.grid(True)
-    
-    plt.legend(loc='upper right', bbox_to_anchor=(0.1, 0.1))
-    plt.title(f'Performance Metrics Comparison - {scenario}')
-    
-    plt.tight_layout()
-    plt.savefig(os.path.join(plots_dir, f"{scenario}_radar_comparison.png"))
-    plt.close()
-
-def main():
-    """Compare RL controllers with traditional controllers."""
-    parser = argparse.ArgumentParser(description='Test and compare traffic controllers')
-    parser.add_argument('--scenario', type=str, default="light_traffic",
-                        help='Traffic scenario to test')
-    parser.add_argument('--controllers', type=str, nargs='+',
-                        default=["Wired AI", "Wireless AI", "Traditional", "Wired RL", "Wireless RL"],
-                        help='Controllers to compare')
-    parser.add_argument('--steps', type=int, default=1000,
-                        help='Number of simulation steps')
-    parser.add_argument('--gui', action='store_true',
-                        help='Show SUMO GUI during simulation')
-    parser.add_argument('--models-dir', type=str, default=None,
-                        help='Directory containing trained models')
-    parser.add_argument('--output-dir', type=str, default=None,
-                        help='Directory to save results')
-    args = parser.parse_args()
-    
-    # Set default models directory if not specified
-    if args.models_dir is None:
-        args.models_dir = os.path.join(project_root, "data", "models")
-    
-    # Set default output directory if not specified
-    if args.output_dir is None:
-        args.output_dir = os.path.join(project_root, "data", "outputs")
-    
-    # Get model paths for RL controllers
-    model_paths = {}
-    if "Wired RL" in args.controllers:
-        # Find the latest Wired RL model
-        wired_models = [f for f in os.listdir(args.models_dir) 
-                        if f.startswith("wired_rl_") and f.endswith(".pkl")]
-        if wired_models:
-            latest_wired = sorted(wired_models)[-1]  # Get the latest model
-            model_paths["Wired RL"] = os.path.join(args.models_dir, latest_wired)
-            print(f"Using Wired RL model: {latest_wired}")
-    
-    if "Wireless RL" in args.controllers:
-        # Find the latest Wireless RL model
-        wireless_models = [f for f in os.listdir(args.models_dir) 
-                          if f.startswith("wireless_rl_") and f.endswith(".pkl")]
-        if wireless_models:
-            latest_wireless = sorted(wireless_models)[-1]  # Get the latest model
-            model_paths["Wireless RL"] = os.path.join(args.models_dir, latest_wireless)
-            print(f"Using Wireless RL model: {latest_wireless}")
-    
-    # Run comparison
-    compare_controllers(
-        args.controllers,
-        args.scenario,
-        model_paths=model_paths,
-        steps=args.steps,
-        output_dir=args.output_dir,
-        gui=args.gui
-    )
-
-def create_temp_config(route_file):
-    """
-    Create a temporary SUMO configuration file.
-    
-    Args:
-        route_file (str): Path to the route file
-        
-    Returns:
-        str: Path to the created config file
-    """
-    # Get base name without extension
-    base_name = os.path.basename(route_file).split('.')[0]
-    
-    # Network file
-    network_file = os.path.join(project_root, "config", "maps", "traffic_grid.net.xml")
-    
-    # Create a unique config file name
-    config_name = f"temp_test_{base_name}.sumocfg"
-    config_path = os.path.join(project_root, "config", "scenarios", config_name)
-    
-    # Write the config file
-    with open(config_path, 'w') as f:
-        f.write(f"""<?xml version="1.0" encoding="UTF-8"?>
-<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
-    <input>
-        <net-file value="{network_file}"/>
-        <route-files value="{route_file}"/>
-    </input>
-    <time>
-        <begin value="0"/>
-        <end value="3600"/>
-        <step-length value="1.0"/>
-    </time>
-    <processing>
-        <time-to-teleport value="-1"/>
-    </processing>
-    <report>
-        <verbose value="false"/>
-        <no-step-log value="true"/>
-    </report>
-</configuration>""")
-    
-    print(f"Created temporary config file: {config_path}")
-    return config_path
-
-if __name__ == "__main__":
-    main()
-    _file = os.path.join(
-            project_root, "config", "scenarios", f"{args.scenario}.rou.xml")
-        
-        if os.path.exists(route_file):
-            scenario_path = create_temp_config(route_file)
-        else:
-            print(f"Scenario {args.scenario} not found.")
-            return
-    
-    print(f"Training {args.controller} on {args.scenario} for {args.episodes} episodes")
-    
-    # Train the controller
-    train_controller(
-        args.controller,
-        scenario_path,
-        episodes=args.episodes,
-        steps_per_episode=args.steps,
-        learning_rate=args.learning_rate,
-        discount_factor=args.discount_factor,
-        exploration_rate=args.exploration_rate,
-        exploration_decay=args.exploration_decay,
-        output_dir=args.output_dir
-    )
-
 def create_temp_config(route_file):
     """
     Create a temporary SUMO configuration file.
@@ -781,6 +404,59 @@ def create_temp_config(route_file):
     print(f"Created temporary config file: {config_path}")
     return config_path
 
+def main():
+    """Main function to train RL controllers."""
+    parser = argparse.ArgumentParser(description='Train reinforcement learning traffic controllers')
+    parser.add_argument('--controller', type=str, default="Wired RL",
+                        choices=["Wired RL", "Wireless RL"],
+                        help='Type of controller to train')
+    parser.add_argument('--scenario', type=str, default="light_traffic",
+                        help='Traffic scenario to use for training')
+    parser.add_argument('--episodes', type=int, default=20,
+                        help='Number of training episodes')
+    parser.add_argument('--steps', type=int, default=500,
+                        help='Steps per episode')
+    parser.add_argument('--learning-rate', type=float, default=0.1,
+                        help='Learning rate for the RL algorithm')
+    parser.add_argument('--discount-factor', type=float, default=0.9,
+                        help='Discount factor for the RL algorithm')
+    parser.add_argument('--exploration-rate', type=float, default=0.3,
+                        help='Initial exploration rate')
+    parser.add_argument('--exploration-decay', type=float, default=0.9,
+                        help='Exploration rate decay factor')
+    parser.add_argument('--output-dir', type=str, default=None,
+                        help='Directory to save trained models and results')
+    args = parser.parse_args()
+    
+    # Construct the path to the scenario
+    scenario_path = os.path.join(
+        project_root, "config", "scenarios", f"{args.scenario}.sumocfg")
+    
+    if not os.path.exists(scenario_path):
+        # Try to create a temp config if the scenario file exists
+        route_file = os.path.join(
+            project_root, "config", "scenarios", f"{args.scenario}.rou.xml")
+        
+        if os.path.exists(route_file):
+            scenario_path = create_temp_config(route_file)
+        else:
+            print(f"Scenario {args.scenario} not found.")
+            return
+    
+    print(f"Training {args.controller} on {args.scenario} for {args.episodes} episodes")
+    
+    # Train the controller
+    train_controller(
+        args.controller,
+        scenario_path,
+        episodes=args.episodes,
+        steps_per_episode=args.steps,
+        learning_rate=args.learning_rate,
+        discount_factor=args.discount_factor,
+        exploration_rate=args.exploration_rate,
+        exploration_decay=args.exploration_decay,
+        output_dir=args.output_dir
+    )
+
 if __name__ == "__main__":
     main()
-    
