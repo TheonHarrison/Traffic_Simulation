@@ -259,7 +259,76 @@ def compare_controllers(controllers, scenario, model_paths=None, steps=1000, out
     
     # Construct scenario path
     scenario_path = os.path.join(project_root, "config", "scenarios", f"{scenario}.sumocfg")
-    
+    # Chat
     if not os.path.exists(scenario_path):
-        # Try to create a temp config if the scenario file exists
-        route
+        raise FileNotFoundError(f"Scenario configuration file not found: {scenario_path}")
+    
+    results = {}
+    
+    for controller_type in controllers:
+        print(f"\nTesting controller: {controller_type}")
+        
+        model_path = None
+        if model_paths and controller_type in model_paths:
+            model_path = model_paths[controller_type]
+        
+        # Run the test
+        metrics = run_test(
+            controller_type=controller_type,
+            config_path=scenario_path,
+            model_path=model_path,
+            steps=steps,
+            gui=gui
+        )
+        
+        # Save the metrics to a JSON file
+        output_file = os.path.join(output_dir, f"{controller_type}_{scenario}_results.json")
+        with open(output_file, "w") as f:
+            json.dump(metrics, f, indent=4)
+        
+        results[controller_type] = metrics
+    
+    # Plot comparison
+    fig, axs = plt.subplots(2, 2, figsize=(14, 10))
+    fig.suptitle(f"Controller Comparison: {scenario}", fontsize=16)
+    
+    # Plot average waiting times
+    for ctrl, data in results.items():
+        axs[0, 0].plot(data["waiting_times"], label=ctrl)
+    axs[0, 0].set_title("Average Waiting Time per Step")
+    axs[0, 0].set_xlabel("Step")
+    axs[0, 0].set_ylabel("Waiting Time (s)")
+    axs[0, 0].legend()
+    
+    # Plot average speeds
+    for ctrl, data in results.items():
+        axs[0, 1].plot(data["speeds"], label=ctrl)
+    axs[0, 1].set_title("Average Speed per Step")
+    axs[0, 1].set_xlabel("Step")
+    axs[0, 1].set_ylabel("Speed (m/s)")
+    axs[0, 1].legend()
+    
+    # Plot vehicle counts
+    for ctrl, data in results.items():
+        axs[1, 0].plot(data["vehicle_counts"], label=ctrl)
+    axs[1, 0].set_title("Vehicle Count per Step")
+    axs[1, 0].set_xlabel("Step")
+    axs[1, 0].set_ylabel("Number of Vehicles")
+    axs[1, 0].legend()
+    
+    # Plot throughput
+    throughputs = [data["throughput"] for data in results.values()]
+    ctrl_labels = list(results.keys())
+    axs[1, 1].bar(ctrl_labels, throughputs)
+    axs[1, 1].set_title("Total Throughput")
+    axs[1, 1].set_ylabel("Vehicles Passed")
+    
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    
+    comparison_plot_path = os.path.join(output_dir, f"comparison_{scenario}.png")
+    plt.savefig(comparison_plot_path)
+    plt.close()
+    
+    print(f"\nComparison plot saved to: {comparison_plot_path}")
+    
+    return results
