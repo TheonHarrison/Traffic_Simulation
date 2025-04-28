@@ -212,3 +212,7 @@ mlruns/
 .tfvars
 .tfstate
 .tfstate.backup
+
+
+data/models
+data/outputs

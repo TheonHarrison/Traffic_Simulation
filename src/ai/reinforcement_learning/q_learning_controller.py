@@ -202,6 +202,7 @@ class QLearningController(RLController):
         # Exploration: random action
         if np.random.random() < self.exploration_rate:
             self.exploration_count += 1
+            # Make sure we return a phase string, not an index
             return np.random.choice(self.phase_sequence)
         
         # Exploitation: best known action
@@ -219,7 +220,13 @@ class QLearningController(RLController):
         
         # If all Q-values are the same (or not set), choose randomly
         if best_action is None:
-            return np.random.choice(self.phase_sequence)
+            best_action = np.random.choice(self.phase_sequence)
+        
+        # Make sure we're returning a phase string
+        if not isinstance(best_action, str):
+            print(f"WARNING: Converting non-string action {best_action} ({type(best_action)}) to string")
+            # Fall back to a default phase if something went wrong
+            best_action = self.phase_sequence[0]
         
         return best_action
     
@@ -318,9 +325,14 @@ class QLearningController(RLController):
             # Extract Q-tables and convert string keys back to tuples
             serialized_q_tables = model_info.get("q_tables", {})
             for junction_id, q_table in serialized_q_tables.items():
-                self.q_tables[junction_id] = {
-                    eval(key): value for key, value in q_table.items()
-                }
+                self.q_tables[junction_id] = {}
+                for key, value in q_table.items():
+                    state, action = eval(key)
+                    if not isinstance(action, str):
+                        print(f"WARNING: Invalid action type {type(action)} in loaded Q-table. Converting...")
+                        action = self.phase_sequence[action] if isinstance(action, int) else self.phase_sequence[0]
+                    self.q_tables[junction_id][(state, action)] = value
+
             
             # Extract other parameters
             self.learning_rate = model_info.get("learning_rate", self.learning_rate)

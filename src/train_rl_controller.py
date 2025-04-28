@@ -198,32 +198,47 @@ def train_controller(controller_type, config_path, episodes=50, steps_per_episod
             
             # Get phase decisions from controller for each junction
             for tl_id in tl_ids:
-                phase = controller.get_phase_for_junction(tl_id, current_time)
-                
-                # Set traffic light phase in SUMO
-                current_sumo_state = traci.trafficlight.getRedYellowGreenState(tl_id)
-                
-                # Adjust phase length if needed
-                if len(phase) != len(current_sumo_state):
-                    if verbose:
-                        print(f"Adjusting phase length for {tl_id}. Expected {len(current_sumo_state)}, got {len(phase)}.")
-                    if len(phase) < len(current_sumo_state):
-                        # Repeat the pattern
-                        phase = phase * (len(current_sumo_state) // len(phase)) + phase[:len(current_sumo_state) % len(phase)]
+                try:
+                    phase = controller.get_phase_for_junction(tl_id, current_time)
+                    
+                    # Debug output
+                    if verbose and step % 50 == 0:
+                        print(f"DEBUG - Phase type: {type(phase)}, Phase value: {phase}")
+                    
+                    # Set traffic light phase in SUMO
+                    current_sumo_state = traci.trafficlight.getRedYellowGreenState(tl_id)
+                    
+                    if verbose and step % 50 == 0:
+                        print(f"DEBUG - Current state: {current_sumo_state} (len={len(current_sumo_state)})")
+                    
+                    # Only update if phase is different and is a valid string
+                    if isinstance(phase, str):
+                        # Adjust phase length if needed
+                        if len(phase) != len(current_sumo_state):
+                            if verbose:
+                                print(f"Adjusting phase length for {tl_id}. Expected {len(current_sumo_state)}, got {len(phase)}.")
+                            if len(phase) < len(current_sumo_state):
+                                # Repeat the pattern
+                                phase = phase * (len(current_sumo_state) // len(phase)) + phase[:len(current_sumo_state) % len(phase)]
+                            else:
+                                # Truncate
+                                phase = phase[:len(current_sumo_state)]
+                        
+                        # Only update if phase is different
+                        if phase != current_sumo_state:
+                            try:
+                                traci.trafficlight.setRedYellowGreenState(tl_id, phase)
+                            except Exception as e:
+                                print(f"Error setting traffic light state for {tl_id}: {e}")
+                                print(f"Current state: {current_sumo_state} (len={len(current_sumo_state)})")
+                                print(f"Attempted phase: {phase} (len={len(phase)})")
+                                # Continue with next traffic light without crashing
+                                continue
                     else:
-                        # Truncate
-                        phase = phase[:len(current_sumo_state)]
-                
-                # Only update if phase is different
-                if phase != current_sumo_state:
-                    try:
-                        traci.trafficlight.setRedYellowGreenState(tl_id, phase)
-                    except Exception as e:
-                        print(f"Error setting traffic light state for {tl_id}: {e}")
-                        print(f"Current state: {current_sumo_state} (len={len(current_sumo_state)})")
-                        print(f"Attempted phase: {phase} (len={len(phase)})")
-                        # Continue with next traffic light without crashing
-                        continue
+                        print(f"WARNING: Invalid phase type for {tl_id}: {type(phase)}. Skipping update.")
+                except Exception as e:
+                    print(f"Error processing traffic light {tl_id}: {e}")
+                    continue
             
             # Collect metrics
             vehicles_all = traci.vehicle.getIDList()
@@ -238,13 +253,13 @@ def train_controller(controller_type, config_path, episodes=50, steps_per_episod
             sim.step()
             
             # Track rewards
-            if controller.reward_history:
+            if hasattr(controller, "reward_history") and controller.reward_history:
                 episode_rewards.append(controller.reward_history[-1])
             
             # Print progress
             if verbose and step % 100 == 0 and step > 0:
                 print(f"  Step {step}/{steps_per_episode} - "
-                      f"Avg reward: {sum(episode_rewards[-100:]) / 100:.2f}")
+                      f"Avg reward: {sum(episode_rewards[-100:]) / max(1, len(episode_rewards[-100:])):.2f}" if episode_rewards else "N/A")
         
         # Calculate episode statistics
         episode_time = time.time() - episode_start_time
@@ -252,8 +267,10 @@ def train_controller(controller_type, config_path, episodes=50, steps_per_episod
         avg_wait_time = total_waiting_time / vehicle_count if vehicle_count > 0 else 0
         avg_speed = total_speed / vehicle_count if vehicle_count > 0 else 0
         
-        # Get Q-table stats
-        q_table_stats = controller.get_q_table_stats()
+        # Get Q-table stats if available
+        q_table_stats = {"total_entries": 0, "unique_states": 0}
+        if hasattr(controller, "get_q_table_stats"):
+            q_table_stats = controller.get_q_table_stats()
         
         # Close the simulation
         sim.close()
@@ -263,7 +280,7 @@ def train_controller(controller_type, config_path, episodes=50, steps_per_episod
         training_stats["episode_avg_wait_times"].append(avg_wait_time)
         training_stats["episode_avg_speeds"].append(avg_speed)
         training_stats["episode_throughputs"].append(throughput)
-        training_stats["q_table_sizes"].append(q_table_stats["total_entries"])
+        training_stats["q_table_sizes"].append(q_table_stats.get("total_entries", 0))
         training_stats["episode_times"].append(episode_time)
         training_stats["exploration_rates"].append(current_exploration_rate)
         
@@ -273,33 +290,45 @@ def train_controller(controller_type, config_path, episodes=50, steps_per_episod
             print(f"  Average wait time: {avg_wait_time:.2f}s")
             print(f"  Average speed: {avg_speed:.2f}m/s")
             print(f"  Throughput: {throughput} vehicles")
-            print(f"  Q-table size: {q_table_stats['total_entries']} entries")
+            print(f"  Q-table size: {q_table_stats.get('total_entries', 0)} entries")
         
         # Save controller after each episode
-        if episode % 5 == 0 or episode == episodes - 1:
-            model_filename = os.path.join(
-                output_dir, f"{controller_type.replace(' ', '_').lower()}_episode_{episode+1}.pkl")
-            controller.save_q_table(model_filename)
-            
-            if verbose:
-                print(f"  Model saved to {model_filename}")
+        if hasattr(controller, "save_q_table") and (episode % 5 == 0 or episode == episodes - 1):
+            try:
+                model_filename = os.path.join(
+                    output_dir, f"{controller_type.replace(' ', '_').lower()}_episode_{episode+1}.pkl")
+                controller.save_q_table(model_filename)
+                
+                if verbose:
+                    print(f"  Model saved to {model_filename}")
+            except Exception as e:
+                print(f"Error saving model: {e}")
     
     # Save training statistics
     stats_filename = os.path.join(
         output_dir, f"{controller_type.replace(' ', '_').lower()}_training_stats.json")
     
-    with open(stats_filename, 'w') as f:
-        # Convert numpy arrays to lists for JSON serialization
-        for key, value in training_stats.items():
-            if isinstance(value, np.ndarray):
-                training_stats[key] = value.tolist()
-        json.dump(training_stats, f, indent=2)
-    
-    if verbose:
-        print(f"\nTraining completed. Statistics saved to {stats_filename}")
+    try:
+        with open(stats_filename, 'w') as f:
+            # Convert numpy arrays to lists for JSON serialization
+            json_compatible_stats = {}
+            for key, value in training_stats.items():
+                if isinstance(value, np.ndarray):
+                    json_compatible_stats[key] = value.tolist()
+                else:
+                    json_compatible_stats[key] = value
+            json.dump(json_compatible_stats, f, indent=2)
+        
+        if verbose:
+            print(f"\nTraining completed. Statistics saved to {stats_filename}")
+    except Exception as e:
+        print(f"Error saving training statistics: {e}")
     
     # Plot learning curves
-    plot_learning_curves(training_stats, output_dir, controller_type)
+    try:
+        plot_learning_curves(training_stats, output_dir, controller_type)
+    except Exception as e:
+        print(f"Error plotting learning curves: {e}")
     
     return training_stats
 
@@ -318,11 +347,12 @@ def plot_learning_curves(stats, output_dir, controller_type):
     fig, axs = plt.subplots(2, 2, figsize=(15, 10))
     
     # Plot average rewards
-    axs[0, 0].plot(stats["episode_rewards"])
-    axs[0, 0].set_title('Average Reward per Episode')
-    axs[0, 0].set_xlabel('Episode')
-    axs[0, 0].set_ylabel('Average Reward')
-    axs[0, 0].grid(True)
+    if stats["episode_rewards"]:
+        axs[0, 0].plot(stats["episode_rewards"])
+        axs[0, 0].set_title('Average Reward per Episode')
+        axs[0, 0].set_xlabel('Episode')
+        axs[0, 0].set_ylabel('Average Reward')
+        axs[0, 0].grid(True)
     
     # Plot average waiting times
     axs[0, 1].plot(stats["episode_avg_wait_times"])

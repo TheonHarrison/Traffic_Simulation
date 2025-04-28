@@ -18,55 +18,56 @@ class RLController(TrafficController):
     This controller implements the core RL functionality while
     maintaining compatibility with the existing controller framework.
     """
-def __init__(self, junction_ids, learning_rate=0.1, discount_factor=0.9, exploration_rate=0.3):
-    """
-    Initialize the RL controller.
-    
-    Args:
-        junction_ids (list): List of junction IDs to control
-        learning_rate (float): Alpha parameter for Q-learning updates (0-1)
-        discount_factor (float): Gamma parameter for future reward discounting (0-1)
-        exploration_rate (float): Epsilon parameter for exploration vs. exploitation (0-1)
-    """
-    super().__init__(junction_ids)
-    
-    # RL parameters
-    self.learning_rate = learning_rate 
-    self.discount_factor = discount_factor
-    self.exploration_rate = exploration_rate
-    
-    # Define the phase sequences same as other controllers for compatibility
-    self.phase_sequence = ["GrYr", "yrGr", "rGry", "ryrG"]
-    
-    # Define phase durations for each junction (in seconds)
-    self.phase_durations = {
-        junction_id: {
-            "GrYr": 30.0,  # Green for north-south, red for east-west
-            "yrGr": 5.0,   # Yellow transitioning to red for north-south
-            "rGry": 30.0,  # Red for north-south, green for east-west
-            "ryrG": 5.0    # Red for north-south, yellow transitioning to red for east-west
+    def __init__(self, junction_ids, learning_rate=0.1, discount_factor=0.9, exploration_rate=0.3):
+        """
+        Initialize the RL controller.
+        
+        Args:
+            junction_ids (list): List of junction IDs to control
+            learning_rate (float): Alpha parameter for Q-learning updates (0-1)
+            discount_factor (float): Gamma parameter for future reward discounting (0-1)
+            exploration_rate (float): Epsilon parameter for exploration vs. exploitation (0-1)
+        """
+        # Call the parent constructor with only the junction_ids parameter
+        super().__init__(junction_ids)
+        
+        # RL parameters
+        self.learning_rate = learning_rate 
+        self.discount_factor = discount_factor
+        self.exploration_rate = exploration_rate
+        
+        # Define the phase sequences same as other controllers for compatibility
+        self.phase_sequence = ["GrYr", "yrGr", "rGry", "ryrG"]
+        
+        # Define phase durations for each junction (in seconds)
+        self.phase_durations = {
+            junction_id: {
+                "GrYr": 30.0,  # Green for north-south, red for east-west
+                "yrGr": 5.0,   # Yellow transitioning to red for north-south
+                "rGry": 30.0,  # Red for north-south, green for east-west
+                "ryrG": 5.0    # Red for north-south, yellow transitioning to red for east-west
+            }
+            for junction_id in junction_ids
         }
-        for junction_id in junction_ids
-    }
-    
-    # Initialize state-action values (Q-table)
-    # We'll implement this in subclasses based on specific RL approach
-    self.q_table = {}
-    
-    # Track current state for each junction
-    self.current_states = {junction_id: None for junction_id in junction_ids}
-    
-    # Track last action for each junction
-    self.last_actions = {junction_id: None for junction_id in junction_ids}
-    
-    # Track accumulated rewards for performance monitoring
-    self.total_rewards = 0
-    self.reward_history = []
-    
-    # Store traffic light state lengths for each junction
-    self.tl_state_lengths = {}
-    
-    print(f"Initialized RL Controller with parameters: lr={learning_rate}, df={discount_factor}, er={exploration_rate}")
+        
+        # Initialize state-action values (Q-table)
+        # We'll implement this in subclasses based on specific RL approach
+        self.q_table = {}
+        
+        # Track current state for each junction
+        self.current_states = {junction_id: None for junction_id in junction_ids}
+        
+        # Track last action for each junction
+        self.last_actions = {junction_id: None for junction_id in junction_ids}
+        
+        # Track accumulated rewards for performance monitoring
+        self.total_rewards = 0
+        self.reward_history = []
+        
+        # Store traffic light state lengths for each junction
+        self.tl_state_lengths = {}
+        
+        print(f"Initialized RL Controller with parameters: lr={learning_rate}, df={discount_factor}, er={exploration_rate}")
     
     def _get_state(self, junction_id):
         """
@@ -147,6 +148,11 @@ def __init__(self, junction_ids, learning_rate=0.1, discount_factor=0.9, explora
         # If this is the first time, just select an action
         if self.last_actions.get(junction_id) is None:
             action = self._select_action(current_state, junction_id)
+            # Ensure action is a valid phase string
+            if not isinstance(action, str) or action not in self.phase_sequence:
+                print(f"Warning: Invalid action type {type(action)} or value {action}. Using default phase.")
+                action = self.phase_sequence[0]
+            
             self.last_actions[junction_id] = action
             
             # Record response time
@@ -168,6 +174,11 @@ def __init__(self, junction_ids, learning_rate=0.1, discount_factor=0.9, explora
         
         # Select next action
         action = self._select_action(current_state, junction_id)
+        # Ensure action is a valid phase string
+        if not isinstance(action, str) or action not in self.phase_sequence:
+            print(f"Warning: Invalid action type {type(action)} or value {action}. Using default phase.")
+            action = self.phase_sequence[0]
+        
         self.last_actions[junction_id] = action
         
         # Record decision time

@@ -68,8 +68,27 @@ class WiredRLController(QLearningController):
         self.total_latency += self.network_latency
         self.decision_count += 1
         
-        # Then make decision using the base RL implementation
-        return super().decide_phase(junction_id, current_time)
+        # Get the phase from the base RL implementation
+        phase = super().decide_phase(junction_id, current_time)
+        
+        # Ensure phase is a string
+        if not isinstance(phase, str):
+            print(f"Warning: decide_phase returned a non-string value: {phase} ({type(phase)}). Using default phase.")
+            phase = self.phase_sequence[0]
+        
+        # Ensure the phase matches the expected length for this junction
+        if junction_id in self.tl_state_lengths:
+            expected_length = self.tl_state_lengths[junction_id]
+            if len(phase) != expected_length:
+                # Adjust phase length to match expected length
+                if len(phase) < expected_length:
+                    # Repeat the pattern to match length
+                    phase = phase * (expected_length // len(phase)) + phase[:expected_length % len(phase)]
+                else:
+                    # Truncate to expected length
+                    phase = phase[:expected_length]
+        
+        return phase
     
     def get_network_stats(self):
         """Get statistics about the simulated wired network."""

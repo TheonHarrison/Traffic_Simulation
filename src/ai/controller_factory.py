@@ -4,6 +4,14 @@ from src.ai.traditional_controller import TraditionalController
 from src.ai.reinforcement_learning.wired_rl_controller import WiredRLController
 from src.ai.reinforcement_learning.wireless_rl_controller import WirelessRLController
 
+# Check if the RL modules are available
+try:
+    from src.ai.reinforcement_learning.wired_rl_controller import WiredRLController
+    from src.ai.reinforcement_learning.wireless_rl_controller import WirelessRLController
+    RL_AVAILABLE = True
+except ImportError:
+    RL_AVAILABLE = False
+
 class ControllerFactory:
     """
     Factory class to create different types of traffic controllers.
@@ -17,7 +25,7 @@ class ControllerFactory:
         Args:
             controller_type (str): Type of controller to create
                                 ('Wired AI', 'Wireless AI', 'Traditional',
-                                 'Wired RL', 'Wireless RL')
+                                'Wired RL', 'Wireless RL')
             junction_ids (list): List of junction IDs to control
             **kwargs: Additional parameters to pass to the controller constructor
             
@@ -33,9 +41,11 @@ class ControllerFactory:
             return WirelessController(junction_ids, **kwargs)
         elif controller_type == "Traditional":
             return TraditionalController(junction_ids, **kwargs)
-        elif controller_type == "Wired RL":
+        elif controller_type == "Wired RL" and RL_AVAILABLE:
             return WiredRLController(junction_ids, **kwargs)
-        elif controller_type == "Wireless RL":
+        elif controller_type == "Wireless RL" and RL_AVAILABLE:
             return WirelessRLController(junction_ids, **kwargs)
+        elif controller_type in ["Wired RL", "Wireless RL"] and not RL_AVAILABLE:
+            raise ImportError(f"Reinforcement Learning controllers are not available. Please check your installation.")
         else:
             raise ValueError(f"Invalid controller type: {controller_type}")
