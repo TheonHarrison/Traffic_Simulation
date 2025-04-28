@@ -62,7 +62,7 @@ class ComparisonFramework:
         ]
     
     def run_comparison(self, scenarios=None, controller_types=None, steps=1000, 
-                      runs_per_config=3, gui=False, model_paths=None):
+                      runs_per_config=3, gui=False, model_paths=None, verbose=True):
         """
         Run a complete comparison across specified scenarios and controllers.
         
@@ -73,6 +73,7 @@ class ComparisonFramework:
             runs_per_config: Number of runs for each scenario-controller combination
             gui: Whether to show SUMO GUI
             model_paths: Dictionary mapping RL controller types to model paths
+            verbose: Whether to print detailed progress information
             
         Returns:
             dict: Comprehensive comparison results
@@ -90,10 +91,12 @@ class ComparisonFramework:
             if controller in self.controller_types:
                 valid_controllers.append(controller)
             else:
-                print(f"Warning: Unknown controller type '{controller}'. Skipping.")
+                if verbose:
+                    print(f"Warning: Unknown controller type '{controller}'. Skipping.")
         
         if not valid_controllers:
-            print("Error: No valid controller types specified.")
+            if verbose:
+                print("Error: No valid controller types specified.")
             return {}
         
         # Initialize results structure
@@ -109,25 +112,41 @@ class ComparisonFramework:
         
         # Run comparison for each scenario
         for scenario in scenarios:
-            print(f"\n{'='*80}")
-            print(f"Running comparison for scenario: {scenario}")
-            print(f"{'='*80}")
+            if verbose:
+                print(f"\n{'='*80}")
+                print(f"Running comparison for scenario: {scenario}")
+                print(f"{'='*80}")
             
             scenario_results = {}
             
             for controller_type in valid_controllers:
                 # Skip RL controllers if not available
                 if controller_type in ["Wired RL", "Wireless RL"] and not self.rl_available:
-                    print(f"Skipping {controller_type} (not available)")
+                    if verbose:
+                        print(f"Skipping {controller_type} (not available)")
                     continue
                 
-                print(f"\nTesting {controller_type} on {scenario}...")
+                if verbose:
+                    print(f"\nTesting {controller_type} on {scenario}...")
                 
                 # Get model path for RL controllers if available
                 model_path = None
-                if model_paths and controller_type in model_paths:
-                    model_path = model_paths[controller_type]
-                    print(f"Using pre-trained model: {model_path}")
+                controller_kwargs = {}
+                
+                if model_paths:
+                    # Extract model path
+                    if controller_type in model_paths:
+                        model_path = model_paths[controller_type]
+                        controller_kwargs["model_path"] = model_path
+                        if verbose:
+                            print(f"Using model: {model_path}")
+                    
+                    # Extract exploration rate if specified
+                    exploration_key = f"{controller_type}_exploration_rate"
+                    if exploration_key in model_paths:
+                        controller_kwargs["exploration_rate"] = model_paths[exploration_key]
+                        if verbose:
+                            print(f"Using exploration rate: {model_paths[exploration_key]}")
                 
                 # Initialize controller results
                 controller_results = {
@@ -137,7 +156,8 @@ class ComparisonFramework:
                 
                 # Run multiple times for statistical significance
                 for run in range(runs_per_config):
-                    print(f"  Run {run+1}/{runs_per_config}...")
+                    if verbose:
+                        print(f"  Run {run+1}/{runs_per_config}...")
                     
                     # Run the scenario
                     run_metrics = self.scenario_runner.run_scenario(
@@ -145,16 +165,18 @@ class ComparisonFramework:
                         controller_type=controller_type,
                         steps=steps,
                         gui=gui,
-                        collect_metrics=True
+                        collect_metrics=True,
+                        **controller_kwargs
                     )
                     
                     # Store run results
                     controller_results["runs"].append(run_metrics)
                     
                     # Print run metrics
-                    print(f"    Wait Time: {run_metrics['avg_waiting_time']:.2f}s")
-                    print(f"    Speed: {run_metrics['avg_speed']:.2f}m/s")
-                    print(f"    Throughput: {run_metrics['throughput']} vehicles")
+                    if verbose:
+                        print(f"    Wait Time: {run_metrics['avg_waiting_time']:.2f}s")
+                        print(f"    Speed: {run_metrics['avg_speed']:.2f}m/s")
+                        print(f"    Throughput: {run_metrics['throughput']} vehicles")
                 
                 # Calculate average metrics across runs
                 for metric in self.metrics:
@@ -166,9 +188,10 @@ class ComparisonFramework:
                 scenario_results[controller_type] = controller_results
                 
                 # Print average metrics
-                print(f"  Average metrics for {controller_type} on {scenario}:")
-                for metric, value in controller_results["avg_metrics"].items():
-                    print(f"    {metric}: {value:.4f}")
+                if verbose:
+                    print(f"  Average metrics for {controller_type} on {scenario}:")
+                    for metric, value in controller_results["avg_metrics"].items():
+                        print(f"    {metric}: {value:.4f}")
             
             # Store scenario results
             comparison_results["scenarios"][scenario] = scenario_results
@@ -199,10 +222,12 @@ class ComparisonFramework:
         with open(results_file, 'w') as f:
             json.dump(comparison_results, f, indent=2)
         
-        print(f"\nComparison results saved to: {results_file}")
+        if verbose:
+            print(f"\nComparison results saved to: {results_file}")
         
-        # Generate visualization
-        self.visualize_comparison(comparison_results, timestamp)
+        # Generate visualization if verbose output is enabled
+        if verbose:
+            self.visualize_comparison(comparison_results, timestamp)
         
         return comparison_results
     
@@ -398,6 +423,8 @@ def main():
                         help='Show SUMO GUI during simulation')
     parser.add_argument('--output', type=str, default=None,
                         help='Directory to save results')
+    parser.add_argument('--verbose', action='store_true', default=True,
+                        help='Print detailed progress information')
     args = parser.parse_args()
     
     # Initialize the comparison framework
@@ -414,7 +441,8 @@ def main():
                          if f.startswith(controller_type) and f.endswith('.pkl')]
             if model_files:
                 # Sort by episode number to get the most recent
-                model_files.sort(key=lambda x: int(x.split('_episode_')[1].split('.')[0]))
+                model_files.sort(key=lambda x: int(x.split('_episode_')[1].split('.')[0])
+                                  if '_episode_' in x else 0)
                 newest_model = os.path.join(models_dir, model_files[-1])
                 
                 # Map to controller type
@@ -430,7 +458,8 @@ def main():
         steps=args.steps,
         runs_per_config=args.runs,
         gui=args.gui,
-        model_paths=model_paths
+        model_paths=model_paths,
+        verbose=args.verbose
     )
 
 if __name__ == "__main__":
