@@ -34,7 +34,7 @@ class ScenarioRunner:
         os.makedirs(self.results_dir, exist_ok=True)
     
     def run_scenario(self, scenario_file, controller_type, steps=1000, 
-                    gui=False, delay=0, collect_metrics=True):
+                    gui=False, delay=0, collect_metrics=True, model_path=None):
         """
         Run a specific scenario with a given controller type.
         
@@ -45,6 +45,7 @@ class ScenarioRunner:
             gui: Whether to show SUMO GUI
             delay: Delay between steps (ms)
             collect_metrics: Whether to collect performance metrics
+            model_path: Path to the model file for RL controllers (optional)
             
         Returns:
             Dictionary of performance metrics
@@ -76,8 +77,12 @@ class ScenarioRunner:
                 print("Warning: No traffic lights found in the simulation!")
                 return metrics
             
-            # Create controller
-            controller = ControllerFactory.create_controller(controller_type, tl_ids)
+            # Create controller with model_path if provided
+            controller_kwargs = {}
+            if model_path and "RL" in controller_type:
+                controller_kwargs["model_path"] = model_path
+                
+            controller = ControllerFactory.create_controller(controller_type, tl_ids, **controller_kwargs)
             
             print(f"Running scenario {os.path.basename(scenario_file)} with {controller_type} controller...")
             
