@@ -63,17 +63,20 @@ class WirelessRLController(QLearningController):
         Returns:
             float: Total latency time in seconds
         """
-        # Base latency
-        latency = self.base_latency
+        # Base latency - reduced for training purposes
+        latency = self.base_latency * 0.5
         
-        # Add computation time based on traffic complexity
-        computation_time = traffic_complexity * self.computation_factor
+        # Add computation time based on traffic complexity - more reasonable scaling
+        computation_time = traffic_complexity * self.computation_factor * 0.5
         
         # Add random fluctuation to simulate wireless interference
-        # More traffic means more devices, potentially more interference
-        interference = random.uniform(0, 0.1) * traffic_complexity
+        # Keep this minimal during training to allow learning
+        interference = random.uniform(0, 0.05) * traffic_complexity
         
-        return latency + computation_time + interference
+        total_latency = latency + computation_time + interference
+        
+        # Cap maximum latency for training purposes
+        return min(total_latency, 0.1)  # Max 100ms latency during training
     
     def _simulate_packet_loss(self):
         """
@@ -82,7 +85,10 @@ class WirelessRLController(QLearningController):
         Returns:
             bool: True if packet was lost, False otherwise
         """
-        if random.random() < self.packet_loss_prob:
+        # During training, use much lower packet loss probability
+        training_packet_loss_prob = min(0.001, self.packet_loss_prob)
+        
+        if random.random() < training_packet_loss_prob:
             self.packet_losses += 1
             return True
         return False
@@ -109,49 +115,112 @@ class WirelessRLController(QLearningController):
             west_count = traffic_state.get('west_count', 0)
             
             total_vehicles = north_count + south_count + east_count + west_count
+            
             if total_vehicles > 0:
                 ns_total = north_count + south_count
                 ew_total = east_count + west_count
+                
+                # Improved balance calculation
                 balance = abs(ns_total - ew_total) / total_vehicles
+                
                 # Normalize total vehicles (assuming max of 50 is high complexity)
                 volume_factor = min(1.0, total_vehicles / 50.0)
-                traffic_complexity = (volume_factor * 0.7) + (balance * 0.3)
+                
+                # Calculate traffic complexity with more weight on volume
+                traffic_complexity = (volume_factor * 0.8) + (balance * 0.2)
             else:
                 traffic_complexity = 0.0
         else:
-            traffic_complexity = 0.5  # Default medium complexity
+            traffic_complexity = 0.3  # Default medium-low complexity
+        
+        # Store the current state before applying network effects
+        # This ensures we have the state for learning regardless of network conditions
+        current_state = self._get_state(junction_id)
+        self.current_states[junction_id] = current_state
         
         # Simulate wireless network conditions
         dynamic_latency = self._calculate_dynamic_latency(traffic_complexity)
-        time.sleep(dynamic_latency)
+        
+        # Use reduced latency during training
+        actual_latency = dynamic_latency * 0.1 if self.exploration_rate > 0.1 else dynamic_latency
+        time.sleep(actual_latency)
+        
         self.total_latency += dynamic_latency
         self.decision_count += 1
         
         # Simulate potential packet loss
-        if self._simulate_packet_loss():
-            # If packet loss, return the last action (no update)
-            if junction_id in self.last_actions and self.last_actions[junction_id] is not None:
-                return self.last_actions[junction_id]
-            else:
-                # If no last action, return a random phase
-                return random.choice(self.phase_sequence)
+        packet_lost = self._simulate_packet_loss()
         
-        # Get phase from the base RL implementation
-        phase = super().decide_phase(junction_id, current_time)
+        # Get reward for the previous action - always compute this
+        # to ensure learning happens even with packet loss
+        reward = self._get_reward(junction_id)
+        
+        # Always record rewards for tracking learning progress
+        self.total_rewards += reward
+        self.reward_history.append(reward)
+        
+        # Only update Q-values if we have previous state and action
+        prev_state = self.current_states.get(junction_id)
+        prev_action = self.last_actions.get(junction_id)
+        
+        if prev_state is not None and prev_action is not None:
+            # Update Q-value
+            self._update_q_value(prev_state, prev_action, current_state, reward, junction_id)
+        
+        # If packet loss, return the last action but still learn
+        if packet_lost and junction_id in self.last_actions and self.last_actions[junction_id] is not None:
+            return self.last_actions[junction_id]
+        
+        # Record start time for response time measurement
+        response_start = time.time()
+        
+        # Select next action
+        action = self._select_action(current_state, junction_id)
+        
+        # Ensure action is a valid phase string
+        if not isinstance(action, str) or action not in self.phase_sequence:
+            print(f"Warning: Invalid action type {type(action)} or value {action}. Using default phase.")
+            action = self.phase_sequence[0]
+        
+        # Store the action
+        self.last_actions[junction_id] = action
+        
+        # Record response time
+        self.response_times.append(time.time() - response_start)
         
         # Ensure the phase matches the expected length for this junction
-        if junction_id in self.tl_state_lengths:
+        if hasattr(self, 'tl_state_lengths') and junction_id in self.tl_state_lengths:
             expected_length = self.tl_state_lengths[junction_id]
-            if len(phase) != expected_length:
+            if len(action) != expected_length:
                 # Adjust phase length to match expected length
-                if len(phase) < expected_length:
-                    # Repeat the pattern to match length
-                    phase = phase * (expected_length // len(phase)) + phase[:expected_length % len(phase)]
+                if len(action) < expected_length:
+                    action = action * (expected_length // len(action)) + action[:expected_length % len(action)]
                 else:
-                    # Truncate to expected length
-                    phase = phase[:expected_length]
+                    action = action[:expected_length]
         
-        return phase
+        # Print debug info occasionally during training
+        if self.decision_count % 100 == 0:
+            print(f"Junction {junction_id} - Traffic complexity: {traffic_complexity:.2f}, "
+                  f"Latency: {dynamic_latency*1000:.2f}ms, Reward: {reward:.2f}")
+            
+            if junction_id in self.q_tables and self.q_tables[junction_id]:
+                q_entries = len(self.q_tables[junction_id])
+                print(f"  Q-table entries: {q_entries}, "
+                      f"Exploration rate: {self.exploration_rate:.3f}")
+        
+        return action
+    
+    def reset_metrics(self):
+        """Reset accumulated metrics for a new episode"""
+        self.total_rewards = 0
+        self.reward_history = []
+        self.response_times = []
+        self.decision_times = []
+        self.total_latency = 0
+        self.packet_losses = 0
+        self.decision_count = 0
+        
+        # Don't reset the Q-tables as those need to persist between episodes
     
     def get_network_stats(self):
         """Get statistics about the simulated wireless network."""

@@ -149,29 +149,39 @@ class QLearningController(RLController):
         # Calculate reward components
         
         # 1. Waiting time penalty (more negative for longer waits)
-        wait_penalty = -0.5 * (north_wait + south_wait + east_wait + west_wait)
+        wait_penalty = -1.0 * (north_wait + south_wait + east_wait + west_wait)
         
         # 2. Queue length penalty (more negative for longer queues)
-        queue_penalty = -0.2 * (north_queue + south_queue + east_queue + west_queue)
+        queue_penalty = -0.5 * (north_queue + south_queue + east_queue + west_queue)
         
         # 3. Throughput reward (more positive for more vehicles moving)
         total_vehicles = north_count + south_count + east_count + west_count
-        throughput_reward = 0.1 * (total_vehicles - north_queue - south_queue - east_queue - west_queue)
+        total_queue = north_queue + south_queue + east_queue + west_queue
+        moving_vehicles = max(0, total_vehicles - total_queue)
+        throughput_reward = 0.3 * moving_vehicles
         
         # 4. Balance reward (penalize imbalance between directions)
         ns_total = north_count + south_count
         ew_total = east_count + west_count
         
         if total_vehicles > 0:
-            balance_factor = min(ns_total, ew_total) / max(1, max(ns_total, ew_total))
-            balance_reward = 0.3 * balance_factor
+            # Calculate ratio of smaller direction to larger direction (0-1)
+            if ns_total > 0 and ew_total > 0:
+                balance_factor = min(ns_total, ew_total) / max(ns_total, ew_total)
+            else:
+                balance_factor = 0  # If one direction has no vehicles
+            
+            balance_reward = 1.0 * balance_factor
         else:
-            balance_reward = 0.3  # Perfect balance with no vehicles
+            balance_reward = 1.0  # Perfect balance with no vehicles
         
         # Combine all reward components
         total_reward = wait_penalty + queue_penalty + throughput_reward + balance_reward
         
-        return total_reward
+        # Scale reward to make it more meaningful but not extreme
+        scaled_reward = max(-20, min(20, total_reward))
+        
+        return scaled_reward
     
     def _get_q_value(self, state, action, junction_id):
         """

@@ -18,8 +18,8 @@ from src.ai.reinforcement_learning.wired_rl_controller import WiredRLController
 from src.ai.reinforcement_learning.wireless_rl_controller import WirelessRLController
 
 def train_controller(controller_type, config_path, episodes=50, steps_per_episode=1000, 
-                    learning_rate=0.1, discount_factor=0.9, exploration_rate=0.3,
-                    exploration_decay=0.99, output_dir=None, verbose=True):
+                    learning_rate=0.2, discount_factor=0.9, exploration_rate=0.5,
+                    exploration_decay=0.95, output_dir=None, verbose=True):
     """
     Train a reinforcement learning controller on a SUMO simulation.
     
@@ -97,14 +97,24 @@ def train_controller(controller_type, config_path, episodes=50, steps_per_episod
                 learning_rate=learning_rate,
                 discount_factor=discount_factor,
                 exploration_rate=current_exploration_rate,
-                base_latency=0.005,  # Use small latency for faster training
-                computation_factor=0.01,
-                packet_loss_prob=0.001  # Minimal packet loss for training
+                base_latency=0.001,  # Reduced base latency for training
+                computation_factor=0.005,  # Reduced computation factor
+                packet_loss_prob=0.0005  # Minimal packet loss for training
             )
         else:
             print(f"Invalid controller type: {controller_type}")
             sim.close()
             return training_stats
+        
+        # Reset controller's accumulated metrics at the start of each episode
+        if hasattr(controller, 'reset_metrics'):
+            controller.reset_metrics()
+        else:
+            # If no reset method, manually reset key metrics
+            controller.total_rewards = 0
+            controller.reward_history = []
+            controller.response_times = []
+            controller.decision_times = []
         
         # Store the state lengths for each traffic light
         controller.tl_state_lengths = {}
@@ -258,8 +268,21 @@ def train_controller(controller_type, config_path, episodes=50, steps_per_episod
             
             # Print progress
             if verbose and step % 100 == 0 and step > 0:
+                q_table_size = 0
+                if hasattr(controller, 'q_tables'):
+                    for junction_id in tl_ids:
+                        if junction_id in controller.q_tables:
+                            q_table_size += len(controller.q_tables[junction_id])
+                            
                 print(f"  Step {step}/{steps_per_episode} - "
+                      f"Q-table size: {q_table_size}, "
                       f"Avg reward: {sum(episode_rewards[-100:]) / max(1, len(episode_rewards[-100:])):.2f}" if episode_rewards else "N/A")
+                      
+                # For Wireless controller, print network stats
+                if controller_type == "Wireless RL" and hasattr(controller, 'get_network_stats'):
+                    net_stats = controller.get_network_stats()
+                    print(f"  Network stats - Avg latency: {net_stats['avg_latency']*1000:.2f}ms, "
+                          f"Packet loss: {net_stats['packet_loss_rate']*100:.2f}%")
         
         # Calculate episode statistics
         episode_time = time.time() - episode_start_time
@@ -442,17 +465,17 @@ def main():
                         help='Type of controller to train')
     parser.add_argument('--scenario', type=str, default="light_traffic",
                         help='Traffic scenario to use for training')
-    parser.add_argument('--episodes', type=int, default=20,
+    parser.add_argument('--episodes', type=int, default=50,
                         help='Number of training episodes')
-    parser.add_argument('--steps', type=int, default=500,
+    parser.add_argument('--steps', type=int, default=1000,
                         help='Steps per episode')
-    parser.add_argument('--learning-rate', type=float, default=0.1,
+    parser.add_argument('--learning-rate', type=float, default=0.2,
                         help='Learning rate for the RL algorithm')
     parser.add_argument('--discount-factor', type=float, default=0.9,
                         help='Discount factor for the RL algorithm')
-    parser.add_argument('--exploration-rate', type=float, default=0.3,
+    parser.add_argument('--exploration-rate', type=float, default=0.5,
                         help='Initial exploration rate')
-    parser.add_argument('--exploration-decay', type=float, default=0.9,
+    parser.add_argument('--exploration-decay', type=float, default=0.95,
                         help='Exploration rate decay factor')
     parser.add_argument('--output-dir', type=str, default=None,
                         help='Directory to save trained models and results')
