@@ -1,6 +1,7 @@
 import os
 import sys
 import argparse
+import uuid
 from pathlib import Path
 
 # Add the project root to the Python path
@@ -12,25 +13,28 @@ from src.comparison_framework import ComparisonFramework
 def main():
     """Run a comprehensive comparison of all controllers across all scenarios."""
     parser = argparse.ArgumentParser(description='Run comprehensive traffic controller comparison')
-    parser.add_argument('--include-rl', action='store_true',
-                        help='Include reinforcement learning controllers in comparison')
+    parser.add_argument('--exclude-rl', action='store_true',
+                        help='Exclude reinforcement learning controllers from comparison')
     parser.add_argument('--steps', type=int, default=1000,
                         help='Number of simulation steps per run')
     parser.add_argument('--runs', type=int, default=3,
                         help='Number of runs per configuration')
     parser.add_argument('--gui', action='store_true',
-                        help='Show SUMO GUI during simulation')
+                        help='Show Python visualization GUI during simulation')
     parser.add_argument('--summary-only', action='store_true',
-                        help='Only print summary results, skip detailed visualizations')
+                        help='Only generate summary visualization, not detailed charts')
     args = parser.parse_args()
     
-    # Initialize the comparison framework
-    comparison = ComparisonFramework()
+    # Generate a unique run ID for folder organization
+    run_id = uuid.uuid4().hex[:8]
     
-    # Select controller types
+    # Initialize the comparison framework with the run ID
+    comparison = ComparisonFramework(run_id=run_id)
+    
+    # Select controller types (include RL by default)
     controller_types = ["Traditional", "Wired AI", "Wireless AI"]
     
-    if args.include_rl:
+    if not args.exclude_rl:
         controller_types.extend(["Wired RL", "Wireless RL"])
         
         # Find RL model paths
@@ -76,6 +80,7 @@ def main():
     print(f"Running comprehensive comparison with controllers: {controller_types}")
     print(f"Testing scenarios: {scenarios}")
     print(f"Using {args.runs} runs per configuration, {args.steps} steps per run")
+    print(f"Results will be stored in folder: Comparison_{run_id}")
     
     if model_paths:
         print(f"Using model paths: {model_paths}")
@@ -86,9 +91,14 @@ def main():
         controller_types=controller_types,
         steps=args.steps,
         runs_per_config=args.runs,
-        gui=args.gui,
+        gui=args.gui,  # This now controls Python visualization, not SUMO GUI
         model_paths=model_paths
     )
+    
+    # If summary-only flag is set, regenerate visualizations with only summary
+    if args.summary_only and results:
+        print("\nGenerating summary-only visualization...")
+        comparison.visualize_comparison(results, summary_only=True)
     
     # Print overall summary
     if results:

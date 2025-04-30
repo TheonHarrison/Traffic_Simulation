@@ -18,17 +18,30 @@ class ComparisonFramework:
     """
     Framework for comprehensive comparison of different traffic control strategies.
     """
-    def __init__(self, output_dir=None):
-        """Initialize the comparison framework."""
+    def __init__(self, output_dir=None, run_id=None):
+        """
+        Initialize the comparison framework.
+        
+        Args:
+            output_dir: Base output directory
+            run_id: Identifier for this comparison run
+        """
+        # Create a unique run ID if not provided
+        if run_id is None:
+            run_id = f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        
+        # Set up output directory with run-specific subfolder
         if output_dir is None:
             output_dir = os.path.join(project_root, "data", "outputs", "comparison_results")
-        self.output_dir = output_dir
-        os.makedirs(output_dir, exist_ok=True)
+        
+        # Create a separate folder for this run
+        self.output_dir = os.path.join(output_dir, f"Comparison_{run_id}")
+        os.makedirs(self.output_dir, exist_ok=True)
         
         # Initialize the scenario runner
         self.scenario_runner = ScenarioRunner()
         
-        # Define controller types for comparison
+        # Define controller types for comparison (including RL by default)
         self.controller_types = [
             "Traditional", 
             "Wired AI", 
@@ -71,7 +84,7 @@ class ComparisonFramework:
             controller_types: List of controller types to test (default: all available)
             steps: Number of simulation steps per run
             runs_per_config: Number of runs for each scenario-controller combination
-            gui: Whether to show SUMO GUI
+            gui: Whether to show Python visualization GUI (not SUMO GUI)
             model_paths: Dictionary mapping RL controller types to model paths
             
         Returns:
@@ -139,12 +152,12 @@ class ComparisonFramework:
                 for run in range(runs_per_config):
                     print(f"  Run {run+1}/{runs_per_config}...")
                     
-                    # Run the scenario
+                    # Run the scenario - pass the Python GUI flag, not SUMO GUI
                     run_metrics = self.scenario_runner.run_scenario(
                         scenario_file=os.path.join(project_root, "config", "scenarios", f"{scenario}.rou.xml"),
                         controller_type=controller_type,
                         steps=steps,
-                        gui=gui,
+                        gui=gui,  # This now controls Python visualization
                         collect_metrics=True,
                         model_path=model_path if controller_type in ["Wired RL", "Wireless RL"] else None
                     )
@@ -207,13 +220,14 @@ class ComparisonFramework:
         
         return comparison_results
     
-    def visualize_comparison(self, results, timestamp=None):
+    def visualize_comparison(self, results, timestamp=None, summary_only=False):
         """
         Generate visualizations from comparison results.
         
         Args:
             results: Comparison results dictionary
             timestamp: Optional timestamp for file naming
+            summary_only: Whether to generate only summary visualization
         """
         if not timestamp:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -233,11 +247,13 @@ class ComparisonFramework:
         # 1. Summary comparison across all scenarios
         self._plot_summary_comparison(results, controllers, vis_dir, timestamp)
         
-        # 2. Detailed comparison by scenario
-        self._plot_scenario_comparison(results, controllers, scenarios, vis_dir, timestamp)
-        
-        # 3. Controller performance profile
-        self._plot_controller_profiles(results, controllers, scenarios, vis_dir, timestamp)
+        # Only generate detailed visualizations if summary_only is False
+        if not summary_only:
+            # 2. Detailed comparison by scenario
+            self._plot_scenario_comparison(results, controllers, scenarios, vis_dir, timestamp)
+            
+            # 3. Controller performance profile - removed radar charts
+            self._plot_controller_profiles(results, controllers, scenarios, vis_dir, timestamp)
     
     def _plot_summary_comparison(self, results, controllers, output_dir, timestamp):
         """Plot summary comparison across all scenarios."""
@@ -322,62 +338,44 @@ class ComparisonFramework:
             plt.close()
     
     def _plot_controller_profiles(self, results, controllers, scenarios, output_dir, timestamp):
-        """Plot performance profile for each controller."""
-        # For each controller, create a radar chart showing performance across metrics and scenarios
-        metrics_for_radar = ['avg_waiting_time', 'avg_speed', 'throughput']
-        
+        """Plot line charts showing each controller's performance across scenarios."""
+        # For each controller, create line charts showing performance across scenarios
         for controller in controllers:
-            # Create a figure with subplots for each scenario
-            fig, axs = plt.subplots(1, len(scenarios), figsize=(5 * len(scenarios), 5), 
-                                    subplot_kw=dict(polar=True))
+            # Create a figure with subplots for each metric
+            fig, axs = plt.subplots(len(self.metrics), 1, figsize=(10, 3 * len(self.metrics)))
             
-            if len(scenarios) == 1:
+            if len(self.metrics) == 1:
                 axs = [axs]
                 
             fig.suptitle(f'Performance Profile: {controller}', fontsize=16)
             
-            # Process each scenario
-            for i, scenario in enumerate(scenarios):
+            # Process each metric
+            for i, metric in enumerate(self.metrics):
                 ax = axs[i]
                 
-                # Check if data exists
-                if scenario not in results["scenarios"] or controller not in results["scenarios"][scenario]:
-                    continue
+                # Get values across scenarios
+                values = []
+                for scenario in scenarios:
+                    if scenario in results["scenarios"] and controller in results["scenarios"][scenario]:
+                        values.append(results["scenarios"][scenario][controller]["avg_metrics"].get(metric, 0))
+                    else:
+                        values.append(0)
                 
-                # Get data for this controller and scenario
-                data = results["scenarios"][scenario][controller]["avg_metrics"]
+                # Plot line chart
+                ax.plot(range(len(scenarios)), values, 'o-', linewidth=2)
                 
-                # Normalize the data for radar chart
-                # For waiting time, lower is better, so invert the scale
-                normalized_data = {
-                    'avg_waiting_time': 1 - min(1, data.get('avg_waiting_time', 0) / 60),  # assume 60s is max
-                    'avg_speed': min(1, data.get('avg_speed', 0) / 15),  # assume 15 m/s is max
-                    'throughput': min(1, data.get('throughput', 0) / 500)  # assume 500 vehicles is max
-                }
+                # Add value labels
+                for j, value in enumerate(values):
+                    ax.text(j, value + 0.02 * max(values), f'{value:.2f}', 
+                           ha='center', va='bottom', fontsize=8)
                 
-                # Plot the radar chart
-                angles = np.linspace(0, 2*np.pi, len(metrics_for_radar), endpoint=False).tolist()
-                values = [normalized_data[m] for m in metrics_for_radar]
-                values += values[:1]  # close the loop
-                angles += angles[:1]  # close the loop
-                
-                ax.plot(angles, values, 'o-', linewidth=2)
-                ax.fill(angles, values, alpha=0.25)
-                ax.set_thetagrids(np.degrees(angles[:-1]), metrics_for_radar)
-                ax.set_ylim(0, 1)
-                ax.set_title(scenario.replace('_', ' ').title())
-                
-                # Add raw values as text
-                for j, metric in enumerate(metrics_for_radar):
-                    angle = angles[j]
-                    value = values[j]
-                    raw_value = data.get(metric, 0)
-                    ha = 'left' if np.sin(angle) > 0 else 'right'
-                    va = 'bottom' if np.cos(angle) > 0 else 'top'
-                    offset_x = 0.1 * np.sin(angle)
-                    offset_y = 0.1 * np.cos(angle)
-                    ax.text(angle, value + 0.05, f'{raw_value:.2f}', 
-                           ha=ha, va=va, fontsize=8)
+                # Set labels and title
+                ax.set_xlabel('Scenario')
+                ax.set_ylabel(metric.replace('_', ' ').title())
+                ax.set_title(f'{metric.replace("_", " ").title()}')
+                ax.set_xticks(range(len(scenarios)))
+                ax.set_xticklabels([s.replace('_', ' ').title() for s in scenarios], rotation=45, ha='right')
+                ax.grid(True, linestyle='--', alpha=0.7)
             
             plt.tight_layout(rect=[0, 0.03, 1, 0.95])
             plt.savefig(os.path.join(output_dir, f'{controller}_profile_{timestamp}.png'), dpi=300)
@@ -396,15 +394,17 @@ def main():
     parser.add_argument('--runs', type=int, default=3,
                         help='Number of runs per configuration')
     parser.add_argument('--gui', action='store_true',
-                        help='Show SUMO GUI during simulation')
+                        help='Show Python visualization GUI during simulation')
     parser.add_argument('--output', type=str, default=None,
                         help='Directory to save results')
     parser.add_argument('--summary-only', action='store_true',
-                        help='Only show summary results, not detailed visualizations')
+                        help='Only generate summary visualization, not detailed charts')
+    parser.add_argument('--run-id', type=str, default=None,
+                        help='Identifier for this comparison run')
     args = parser.parse_args()
     
-    # Initialize the comparison framework
-    comparison = ComparisonFramework(output_dir=args.output)
+    # Initialize the comparison framework with specified run ID
+    comparison = ComparisonFramework(output_dir=args.output, run_id=args.run_id)
     
     # Find RL model paths if available
     model_paths = {}
@@ -432,12 +432,16 @@ def main():
         controller_types=args.controllers,
         steps=args.steps,
         runs_per_config=args.runs,
-        gui=args.gui,
+        gui=args.gui,  # This now controls the Python visualization
         model_paths=model_paths
     )
     
-    # Print summary only if requested
-    if args.summary_only and results:
+    # Generate visualizations with summary_only flag
+    if results and args.summary_only:
+        # Re-run visualization with summary_only=True
+        comparison.visualize_comparison(results, summary_only=True)
+        
+        # Print summary
         print("\nOverall Performance Summary:")
         print("=" * 80)
         

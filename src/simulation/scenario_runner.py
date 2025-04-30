@@ -11,6 +11,9 @@ import traci
 from src.utils.sumo_integration import SumoSimulation
 from src.ai.controller_factory import ControllerFactory
 
+# Import Python visualization components
+from src.ui.enhanced_sumo_visualization import EnhancedSumoVisualization
+
 class ScenarioRunner:
     """
     Class for running SUMO traffic scenarios with different controllers.
@@ -33,141 +36,7 @@ class ScenarioRunner:
         # Ensure results directory exists
         os.makedirs(self.results_dir, exist_ok=True)
     
-    def run_scenario(self, scenario_file, controller_type, steps=1000, 
-                    gui=False, delay=0, collect_metrics=True, model_path=None):
-        """
-        Run a specific scenario with a given controller type.
-        
-        Args:
-            scenario_file: Path to the SUMO route file
-            controller_type: Type of controller to use ('Wired AI', 'Wireless AI', or 'Traditional')
-            steps: Number of simulation steps to run
-            gui: Whether to show SUMO GUI
-            delay: Delay between steps (ms)
-            collect_metrics: Whether to collect performance metrics
-            model_path: Path to the model file for RL controllers (optional)
-            
-        Returns:
-            Dictionary of performance metrics
-        """
-        # Create a SUMO configuration file for this run
-        sumo_config = self._create_temp_config(scenario_file)
-        
-        # Start the SUMO simulation
-        sim = SumoSimulation(sumo_config, gui=gui)
-        sim.start()
-        
-        # Initialize metrics collection
-        metrics = {
-            "controller_type": controller_type,
-            "scenario": os.path.basename(scenario_file),
-            "steps": steps,
-            "waiting_times": [],
-            "speeds": [],
-            "throughput": 0,
-            "response_times": [],
-            "decision_times": []
-        }
-        
-        try:
-            # Get traffic light IDs
-            tl_ids = traci.trafficlight.getIDList()
-            
-            if not tl_ids:
-                print("Warning: No traffic lights found in the simulation!")
-                return metrics
-            
-            # Create controller with model_path if provided
-            controller_kwargs = {}
-            if model_path and "RL" in controller_type:
-                controller_kwargs["model_path"] = model_path
-                
-            controller = ControllerFactory.create_controller(controller_type, tl_ids, **controller_kwargs)
-            
-            print(f"Running scenario {os.path.basename(scenario_file)} with {controller_type} controller...")
-            
-            # Main simulation loop
-            for step in range(steps):
-                # Collect traffic state
-                traffic_state = self._collect_traffic_state(tl_ids)
-                
-                # Update controller with traffic state
-                controller.update_traffic_state(traffic_state)
-                
-                # Get current simulation time
-                current_time = traci.simulation.getTime()
-                
-                # Get phase decisions from controller for each junction
-                for tl_id in tl_ids:
-                    phase = controller.get_phase_for_junction(tl_id, current_time)
-                    
-                    # Set traffic light phase in SUMO
-                    current_sumo_state = traci.trafficlight.getRedYellowGreenState(tl_id)
-                    
-                    # Only update if phase is different
-                    if phase != current_sumo_state:
-                        traci.trafficlight.setRedYellowGreenState(tl_id, phase)
-                
-                # Collect metrics if enabled
-                if collect_metrics:
-                    self._update_metrics(metrics)
-                
-                # Step the simulation
-                sim.step()
-                
-                # Add delay if specified
-                if delay > 0:
-                    time.sleep(delay / 1000.0)
-                
-                # Print progress
-                if step % 100 == 0:
-                    print(f"Step {step}/{steps}")
-            
-            # Store final metrics
-            if collect_metrics:
-                # Get controller-specific metrics and set in metrics
-                if controller.response_times:
-                    metrics["response_times"] = controller.response_times
-                
-                if controller.decision_times:
-                    metrics["decision_times"] = controller.decision_times
-                
-                # Calculate avrages metrics
-                if metrics["waiting_times"]:
-                    metrics["avg_waiting_time"] = sum(metrics["waiting_times"]) / len(metrics["waiting_times"])
-                else:
-                    metrics["avg_waiting_time"] = 0
-                
-                if metrics["speeds"]:
-                    metrics["avg_speed"] = sum(metrics["speeds"]) / len(metrics["speeds"])
-                else:
-                    metrics["avg_speed"] = 0
-                
-                if metrics["response_times"]:
-                    metrics["avg_response_time"] = sum(metrics["response_times"]) / len(metrics["response_times"])
-                else:
-                    metrics["avg_response_time"] = 0
-                
-                if metrics["decision_times"]:
-                    metrics["avg_decision_time"] = sum(metrics["decision_times"]) / len(metrics["decision_times"])
-                else:
-                    metrics["avg_decision_time"] = 0
-                
-                # Print summary
-                print("\nScenario Results:")
-                print(f"Average Waiting Time: {metrics['avg_waiting_time']:.2f} seconds")
-                print(f"Average Speed: {metrics['avg_speed']:.2f} m/s")
-                print(f"Total Throughput: {metrics['throughput']} vehicles")
-                print(f"Average Response Time: {metrics['avg_response_time']*1000:.2f} ms")
-                print(f"Average Decision Time: {metrics['avg_decision_time']*1000:.2f} ms")
-        
-        finally:
-            # Close the simulation
-            sim.close()
-        
-        return metrics
-    
-    def _create_temp_config(self, route_file):
+    def create_temp_config(self, route_file):
         """
         Create a temporary SUMO configuration file.
         
@@ -198,12 +67,232 @@ class ScenarioRunner:
         <time-to-teleport value="-1"/>
     </processing>
     <report>
-        <verbose value="true"/>
-        <no-step-log value="false"/>
+        <verbose value="false"/>
+        <no-step-log value="true"/>
     </report>
 </configuration>""")
         
         return config_path
+    
+    def run_scenario(self, scenario_file, controller_type, steps=1000, 
+                    gui=False, delay=0, collect_metrics=True, model_path=None):
+        """
+        Run a specific scenario with a given controller type.
+        
+        Args:
+            scenario_file: Path to the SUMO route file
+            controller_type: Type of controller to use ('Wired AI', 'Wireless AI', or 'Traditional')
+            steps: Number of simulation steps to run
+            gui: Whether to show Python visualization GUI (not SUMO GUI)
+            delay: Delay between steps (ms)
+            collect_metrics: Whether to collect performance metrics
+            model_path: Path to the model file for RL controllers (optional)
+            
+        Returns:
+            Dictionary of performance metrics
+        """
+        # Create a SUMO configuration file for this run
+        sumo_config = self.create_temp_config(scenario_file)
+        
+        # Initialize metrics collection
+        metrics = {
+            "controller_type": controller_type,
+            "scenario": os.path.basename(scenario_file),
+            "steps": steps,
+            "waiting_times": [],
+            "speeds": [],
+            "throughput": 0,
+            "response_times": [],
+            "decision_times": []
+        }
+        
+        controller = None
+        
+        # Choose between GUI and non-GUI simulation
+        if gui:
+            # Use Python GUI (EnhancedSumoVisualization)
+            visualization = EnhancedSumoVisualization(sumo_config, width=1024, height=768, use_gui=False)
+            visualization.set_mode(controller_type)
+            
+            if not visualization.start():
+                print("Failed to start visualization")
+                return metrics
+            
+            # Get traffic light IDs
+            tl_ids = traci.trafficlight.getIDList()
+            
+            if not tl_ids:
+                print("Warning: No traffic lights found in the simulation!")
+                visualization.close()
+                return metrics
+            
+            # Create controller with model_path if provided
+            controller_kwargs = {}
+            if model_path and "RL" in controller_type:
+                controller_kwargs["model_path"] = model_path
+                
+            controller = ControllerFactory.create_controller(controller_type, tl_ids, **controller_kwargs)
+            
+            print(f"Running scenario {os.path.basename(scenario_file)} with {controller_type} controller using Python GUI...")
+            
+            # Main simulation loop
+            for step in range(steps):
+                # Collect traffic state
+                traffic_state = self._collect_traffic_state(tl_ids)
+                
+                # Update controller with traffic state
+                controller.update_traffic_state(traffic_state)
+                
+                # Get current simulation time
+                current_time = traci.simulation.getTime()
+                
+                # Get phase decisions from controller for each junction
+                for tl_id in tl_ids:
+                    phase = controller.get_phase_for_junction(tl_id, current_time)
+                    
+                    # Set traffic light phase in SUMO
+                    current_sumo_state = traci.trafficlight.getRedYellowGreenState(tl_id)
+                    
+                    # Only update if phase is different
+                    if phase != current_sumo_state:
+                        traci.trafficlight.setRedYellowGreenState(tl_id, phase)
+                
+                # Collect metrics if enabled
+                if collect_metrics:
+                    self._update_metrics(metrics)
+                
+                # Step the visualization
+                if not visualization.step(delay):
+                    break
+                
+                # Print progress
+                if step % 100 == 0:
+                    print(f"Step {step}/{steps}")
+            
+            # Close visualization
+            visualization.close()
+            
+            # Store controller metrics
+            if collect_metrics:
+                # Get controller-specific metrics and set in metrics
+                if controller.response_times:
+                    metrics["response_times"] = controller.response_times
+                    metrics["avg_response_time"] = sum(controller.response_times) / len(controller.response_times) if controller.response_times else 0
+                
+                if controller.decision_times:
+                    metrics["decision_times"] = controller.decision_times
+                    metrics["avg_decision_time"] = sum(controller.decision_times) / len(controller.decision_times) if controller.decision_times else 0
+                
+                # Calculate average metrics
+                if metrics["waiting_times"]:
+                    metrics["avg_waiting_time"] = sum(metrics["waiting_times"]) / len(metrics["waiting_times"])
+                else:
+                    metrics["avg_waiting_time"] = 0
+                
+                if metrics["speeds"]:
+                    metrics["avg_speed"] = sum(metrics["speeds"]) / len(metrics["speeds"])
+                else:
+                    metrics["avg_speed"] = 0
+            
+        else:
+            # Non-GUI simulation - use standard SUMO
+            sim = SumoSimulation(sumo_config, gui=False)
+            sim.start()
+            
+            try:
+                # Get traffic light IDs
+                tl_ids = traci.trafficlight.getIDList()
+                
+                if not tl_ids:
+                    print("Warning: No traffic lights found in the simulation!")
+                    return metrics
+                
+                # Create controller with model_path if provided
+                controller_kwargs = {}
+                if model_path and "RL" in controller_type:
+                    controller_kwargs["model_path"] = model_path
+                    
+                controller = ControllerFactory.create_controller(controller_type, tl_ids, **controller_kwargs)
+                
+                print(f"Running scenario {os.path.basename(scenario_file)} with {controller_type} controller...")
+                
+                # Main simulation loop
+                for step in range(steps):
+                    # Collect traffic state
+                    traffic_state = self._collect_traffic_state(tl_ids)
+                    
+                    # Update controller with traffic state
+                    controller.update_traffic_state(traffic_state)
+                    
+                    # Get current simulation time
+                    current_time = traci.simulation.getTime()
+                    
+                    # Get phase decisions from controller for each junction
+                    for tl_id in tl_ids:
+                        phase = controller.get_phase_for_junction(tl_id, current_time)
+                        
+                        # Set traffic light phase in SUMO
+                        current_sumo_state = traci.trafficlight.getRedYellowGreenState(tl_id)
+                        
+                        # Only update if phase is different
+                        if phase != current_sumo_state:
+                            traci.trafficlight.setRedYellowGreenState(tl_id, phase)
+                    
+                    # Collect metrics if enabled
+                    if collect_metrics:
+                        self._update_metrics(metrics)
+                    
+                    # Step the simulation
+                    sim.step()
+                    
+                    # Add delay if specified
+                    if delay > 0:
+                        time.sleep(delay / 1000.0)
+                    
+                    # Print progress
+                    if step % 100 == 0:
+                        print(f"Step {step}/{steps}")
+            
+            finally:
+                # Make sure to always close the simulation
+                if 'sim' in locals() and sim.running:
+                    sim.close()
+        
+        # Store final metrics for both GUI and non-GUI modes
+        if collect_metrics and controller:
+            # Calculate final averages for metrics that aren't already calculated
+            if "avg_waiting_time" not in metrics and metrics["waiting_times"]:
+                metrics["avg_waiting_time"] = sum(metrics["waiting_times"]) / len(metrics["waiting_times"])
+            elif "avg_waiting_time" not in metrics:
+                metrics["avg_waiting_time"] = 0
+            
+            if "avg_speed" not in metrics and metrics["speeds"]:
+                metrics["avg_speed"] = sum(metrics["speeds"]) / len(metrics["speeds"])
+            elif "avg_speed" not in metrics:
+                metrics["avg_speed"] = 0
+                
+            # Get controller metrics
+            if hasattr(controller, 'response_times') and controller.response_times:
+                metrics["response_times"] = controller.response_times
+                metrics["avg_response_time"] = sum(controller.response_times) / len(controller.response_times)
+            else:
+                metrics["avg_response_time"] = 0
+            
+            if hasattr(controller, 'decision_times') and controller.decision_times:
+                metrics["decision_times"] = controller.decision_times
+                metrics["avg_decision_time"] = sum(controller.decision_times) / len(controller.decision_times)
+            else:
+                metrics["avg_decision_time"] = 0
+            
+            # Print summary
+            print("\nScenario Results:")
+            print(f"Average Waiting Time: {metrics['avg_waiting_time']:.2f} seconds")
+            print(f"Average Speed: {metrics['avg_speed']:.2f} m/s")
+            print(f"Total Throughput: {metrics['throughput']} vehicles")
+            print(f"Average Response Time: {metrics['avg_response_time']*1000:.2f} ms")
+            print(f"Average Decision Time: {metrics['avg_decision_time']*1000:.2f} ms")
+        
+        return metrics
     
     def _collect_traffic_state(self, tl_ids):
         """
