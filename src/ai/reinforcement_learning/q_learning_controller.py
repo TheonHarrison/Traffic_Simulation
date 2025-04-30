@@ -19,8 +19,8 @@ class QLearningController(RLController):
     This controller uses the Q-learning algorithm to learn optimal
     traffic signal timing policies based on traffic conditions.
     """
-    def __init__(self, junction_ids, learning_rate=0.1, discount_factor=0.9, 
-                exploration_rate=0.3, state_bins=3, model_path=None):
+    def __init__(self, junction_ids, learning_rate=0.15, discount_factor=0.95, 
+                exploration_rate=0.5, state_bins=5, model_path=None):
         """
         Initialize the Q-Learning controller.
         
@@ -79,16 +79,22 @@ class QLearningController(RLController):
         ns_queue = north_queue + south_queue
         ew_queue = east_queue + west_queue
         
-        # Discretize using bins
-        # We use vehicle counts and queue lengths as our state variables
-        discretized_ns_count = min(self.state_bins-1, int(ns_count / 5))
-        discretized_ew_count = min(self.state_bins-1, int(ew_count / 5))
-        discretized_ns_queue = min(self.state_bins-1, int(ns_queue / 3))
-        discretized_ew_queue = min(self.state_bins-1, int(ew_queue / 3))
+        # Discretize using more fine-grained bins
+        discretized_ns_count = min(self.state_bins-1, int(ns_count / 3))
+        discretized_ew_count = min(self.state_bins-1, int(ew_count / 3))
+        discretized_ns_queue = min(self.state_bins-1, int(ns_queue / 2))
+        discretized_ew_queue = min(self.state_bins-1, int(ew_queue / 2))
+        
+        # Add queue ratio for better differentiation of states
+        if ew_queue + ns_queue > 0:
+            queue_ratio = min(self.state_bins-1, 
+                             int((ns_queue / (ns_queue + ew_queue)) * self.state_bins))
+        else:
+            queue_ratio = 0
         
         # Return as a hashable tuple (for Q-table lookup)
         return (discretized_ns_count, discretized_ew_count, 
-                discretized_ns_queue, discretized_ew_queue)
+                discretized_ns_queue, discretized_ew_queue, queue_ratio)
     
     def _get_state(self, junction_id):
         """
@@ -103,7 +109,7 @@ class QLearningController(RLController):
         # Get the traffic state for this junction
         if junction_id not in self.traffic_state:
             # Return a default state if no data available
-            return (0, 0, 0, 0)
+            return (0, 0, 0, 0, 0)
         
         traffic_state = self.traffic_state[junction_id]
         
@@ -156,8 +162,8 @@ class QLearningController(RLController):
         
         # 3. Throughput reward (more positive for more vehicles moving)
         total_vehicles = north_count + south_count + east_count + west_count
-        total_queue = north_queue + south_queue + east_queue + west_queue
-        moving_vehicles = max(0, total_vehicles - total_queue)
+        total_queues = north_queue + south_queue + east_queue + west_queue
+        moving_vehicles = max(0, total_vehicles - total_queues)
         throughput_reward = 0.3 * moving_vehicles
         
         # 4. Balance reward (penalize imbalance between directions)
@@ -165,23 +171,30 @@ class QLearningController(RLController):
         ew_total = east_count + west_count
         
         if total_vehicles > 0:
-            # Calculate ratio of smaller direction to larger direction (0-1)
-            if ns_total > 0 and ew_total > 0:
-                balance_factor = min(ns_total, ew_total) / max(ns_total, ew_total)
-            else:
-                balance_factor = 0  # If one direction has no vehicles
-            
-            balance_reward = 1.0 * balance_factor
+            # Improved balance calculation
+            imbalance = abs(ns_total - ew_total) / total_vehicles
+            balance_reward = 0.5 * (1.0 - imbalance)
         else:
-            balance_reward = 1.0  # Perfect balance with no vehicles
+            balance_reward = 0.5  # Perfect balance with no vehicles
+        
+        # 5. Queue reduction reward
+        prev_state = self.current_states.get(junction_id)
+        if prev_state is not None:
+            prev_traffic_state = self.traffic_state.get(junction_id, {})
+            prev_total_queue = (prev_traffic_state.get('north_queue', 0) + 
+                               prev_traffic_state.get('south_queue', 0) + 
+                               prev_traffic_state.get('east_queue', 0) + 
+                               prev_traffic_state.get('west_queue', 0))
+            
+            queue_reduction = max(0, prev_total_queue - total_queues)
+            queue_reduction_reward = 0.4 * queue_reduction
+        else:
+            queue_reduction_reward = 0
         
         # Combine all reward components
-        total_reward = wait_penalty + queue_penalty + throughput_reward + balance_reward
+        total_reward = wait_penalty + queue_penalty + throughput_reward + balance_reward + queue_reduction_reward
         
-        # Scale reward to make it more meaningful but not extreme
-        scaled_reward = max(-20, min(20, total_reward))
-        
-        return scaled_reward
+        return total_reward
     
     def _get_q_value(self, state, action, junction_id):
         """

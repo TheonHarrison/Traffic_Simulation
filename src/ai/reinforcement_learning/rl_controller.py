@@ -18,7 +18,7 @@ class RLController(TrafficController):
     This controller implements the core RL functionality while
     maintaining compatibility with the existing controller framework.
     """
-    def __init__(self, junction_ids, learning_rate=0.1, discount_factor=0.9, exploration_rate=0.3):
+    def __init__(self, junction_ids, learning_rate=0.15, discount_factor=0.95, exploration_rate=0.5):
         """
         Initialize the RL controller.
         
