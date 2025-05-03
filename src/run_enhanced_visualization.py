@@ -193,12 +193,14 @@ def main():
     parser.add_argument('--scenario', type=str, default=None,
                         help='Scenario file to run (without .rou.xml extension)')
     parser.add_argument('--controller', type=str, default="Wired AI",
-                        choices=["Wired AI", "Wireless AI", "Traditional"],
+                        choices=["Wired AI", "Wireless AI", "Traditional", "Wired RL", "Wireless RL"],
                         help='Controller type to use')
     parser.add_argument('--steps', type=int, default=1000,
                         help='Number of simulation steps to run')
     parser.add_argument('--delay', type=int, default=50,
                         help='Delay in milliseconds between steps')
+    parser.add_argument('--model', type=str, default=None,
+                        help='Path to a model file for RL controllers')
     args = parser.parse_args()
     
     # Define path to scenario directory
@@ -229,9 +231,15 @@ def main():
         config_path = os.path.join(project_root, "config", "maps", "traffic_grid.sumocfg")
     
     print(f"Using configuration file: {config_path}")
-    
+
+    model_path = args.model
+    if model_path and not os.path.exists(model_path) and "RL" in args.controller:
+        print(f"Error: Model file not found: {model_path}")
+        print("Using default parameters for RL controller")
+        model_path = None
+
     # Run the visualization
-    run_enhanced_visualization(config_path, args.controller, args.steps, args.delay)
+    run_enhanced_visualization(config_path, args.controller, args.steps, args.delay, model_path)
 
 if __name__ == "__main__":
     main()

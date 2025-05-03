@@ -17,7 +17,7 @@ def main():
     parser.add_argument('--scenarios', type=str, nargs='+',
                         help='Specific scenarios to test')
     parser.add_argument('--controllers', type=str, nargs='+',
-                        choices=["Traditional", "Wired AI", "Wireless AI"],
+                        choices=["Traditional", "Wired AI", "Wireless AI", "Wired RL", "Wireless RL"],
                         help='Specific controller types to test')
     parser.add_argument('--steps', type=int, default=1000,
                         help='Number of simulation steps per run')
@@ -40,6 +40,21 @@ def main():
     # Initialize the comparison framework with specified run ID
     comparison = ComparisonFramework(output_dir=args.output, run_id=args.run_id)
     
+    # Check if RL controllers are included and find model paths
+    model_paths = {}
+    controllers = args.controllers or comparison.controller_types
+    rl_controllers = [c for c in controllers if "RL" in c]
+    
+    if rl_controllers:
+        from src.utils.config_utils import find_latest_model
+        for rl_controller in rl_controllers:
+            model_path = find_latest_model(rl_controller)
+            if model_path:
+                model_paths[rl_controller] = model_path
+                print(f"Using model for {rl_controller}: {model_path}")
+            else:
+                print(f"Warning: No model found for {rl_controller}. Will use default parameters.")
+    
     print(f"\n{'='*80}")
     print(f"Running comprehensive comparison with controllers: {args.controllers or comparison.controller_types}")
     print(f"Testing scenarios: {args.scenarios or comparison.scenarios}")
@@ -47,13 +62,14 @@ def main():
     print(f"Results will be stored in folder: Comparison_{args.run_id}")
     print(f"{'='*80}\n")
     
-    # Run the comparison
+    # Run the comparison with model paths
     results = comparison.run_comparison(
         scenarios=args.scenarios,
         controller_types=args.controllers,
         steps=args.steps,
         runs_per_config=args.runs,
-        gui=args.gui
+        gui=args.gui,
+        model_paths=model_paths
     )
     
     # If summary-only flag is set, regenerate visualizations with only summary

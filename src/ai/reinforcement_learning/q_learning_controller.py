@@ -51,12 +51,13 @@ class QLearningController(RLController):
         
         print(f"Initialized Q-Learning Controller with {state_bins} state bins")
     
-    def _discretize_state(self, traffic_state):
+    def _discretize_state(self, traffic_state, junction_id):
         """
         Convert continuous traffic state into a discrete state representation.
         
         Args:
             traffic_state (dict): Traffic state information
+            junction_id (str): The ID of the junction
             
         Returns:
             tuple: Discretized state representation
@@ -79,6 +80,29 @@ class QLearningController(RLController):
         ns_queue = north_queue + south_queue
         ew_queue = east_queue + west_queue
         
+        # Calculate total waiting time - using the actual total waiting time values
+        north_wait = traffic_state.get('north_wait', 0) * north_count if north_count > 0 else 0
+        south_wait = traffic_state.get('south_wait', 0) * south_count if south_count > 0 else 0
+        east_wait = traffic_state.get('east_wait', 0) * east_count if east_count > 0 else 0
+        west_wait = traffic_state.get('west_wait', 0) * west_count if west_count > 0 else 0
+        total_wait_time = north_wait + south_wait + east_wait + west_wait
+        
+        # Initialize last_wait_times if it doesn't exist
+        if not hasattr(self, 'last_wait_times'):
+            self.last_wait_times = {}
+        
+        # Add to the state representation - track trend in waiting time
+        if junction_id in self.last_wait_times:
+            wait_time_increase = total_wait_time > self.last_wait_times[junction_id]
+            trend_indicator = 1 if wait_time_increase else 0
+        else:
+            trend_indicator = 0
+        self.last_wait_times[junction_id] = total_wait_time
+        
+        # Discretize waiting time for the state representation
+        # Assuming max waiting time around 300 seconds (5 minutes) and dividing into state_bins
+        discretized_wait_time = min(self.state_bins-1, int(total_wait_time / (300.0 / self.state_bins)))
+        
         # Discretize using more fine-grained bins
         discretized_ns_count = min(self.state_bins-1, int(ns_count / 3))
         discretized_ew_count = min(self.state_bins-1, int(ew_count / 3))
@@ -88,13 +112,14 @@ class QLearningController(RLController):
         # Add queue ratio for better differentiation of states
         if ew_queue + ns_queue > 0:
             queue_ratio = min(self.state_bins-1, 
-                             int((ns_queue / (ns_queue + ew_queue)) * self.state_bins))
+                            int((ns_queue / (ns_queue + ew_queue)) * self.state_bins))
         else:
             queue_ratio = 0
         
-        # Return as a hashable tuple (for Q-table lookup)
+        # Include in state tuple - add both total wait time and trend indicator
         return (discretized_ns_count, discretized_ew_count, 
-                discretized_ns_queue, discretized_ew_queue, queue_ratio)
+                discretized_ns_queue, discretized_ew_queue, 
+                queue_ratio, discretized_wait_time, trend_indicator)
     
     def _get_state(self, junction_id):
         """
@@ -114,7 +139,7 @@ class QLearningController(RLController):
         traffic_state = self.traffic_state[junction_id]
         
         # Convert to discrete state
-        return self._discretize_state(traffic_state)
+        return self._discretize_state(traffic_state, junction_id)
     
     def _get_reward(self, junction_id):
         """
@@ -158,8 +183,12 @@ class QLearningController(RLController):
         wait_penalty = -1.0 * (north_wait + south_wait + east_wait + west_wait)
         
         # 2. Queue length penalty (more negative for longer queues)
-        queue_penalty = -0.5 * (north_queue + south_queue + east_queue + west_queue)
-        
+        queue_penalty = -2.0 * (north_queue + south_queue + east_queue + west_queue)
+
+        for queue_length in [north_queue, south_queue, east_queue, west_queue]:
+            if queue_length > 3:  # If queue is getting long
+                queue_penalty -= (queue_length - 3) ** 2
+
         # 3. Throughput reward (more positive for more vehicles moving)
         total_vehicles = north_count + south_count + east_count + west_count
         total_queues = north_queue + south_queue + east_queue + west_queue

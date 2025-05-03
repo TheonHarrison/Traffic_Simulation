@@ -200,6 +200,7 @@ venvs/
 *~
 \#*\#
 .#*
+config/scenarios/temp_*
 
 # Celery
 celerybeat-schedule
@@ -216,3 +217,4 @@ mlruns/
 
 data/models
 data/outputs
+

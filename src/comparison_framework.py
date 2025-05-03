@@ -45,7 +45,9 @@ class ComparisonFramework:
         self.controller_types = [
             "Traditional", 
             "Wired AI", 
-            "Wireless AI"
+            "Wireless AI",
+            "Wired RL",
+            "Wireless RL"
         ]
         
         # Define scenarios to test
@@ -64,7 +66,7 @@ class ComparisonFramework:
             "avg_response_time",
             "avg_decision_time"
         ]
-    
+        
     def run_comparison(self, scenarios=None, controller_types=None, steps=1000, 
                       runs_per_config=3, gui=False, model_paths=None):
         """
