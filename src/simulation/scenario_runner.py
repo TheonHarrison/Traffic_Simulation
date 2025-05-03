@@ -10,8 +10,6 @@ sys.path.append(str(project_root))
 import traci
 from src.utils.sumo_integration import SumoSimulation
 from src.ai.controller_factory import ControllerFactory
-
-# Import Python visualization components
 from src.ui.enhanced_sumo_visualization import EnhancedSumoVisualization
 
 class ScenarioRunner:
@@ -171,28 +169,6 @@ class ScenarioRunner:
             
             # Close visualization
             visualization.close()
-            
-            # Store controller metrics
-            if collect_metrics:
-                # Get controller-specific metrics and set in metrics
-                if controller.response_times:
-                    metrics["response_times"] = controller.response_times
-                    metrics["avg_response_time"] = sum(controller.response_times) / len(controller.response_times) if controller.response_times else 0
-                
-                if controller.decision_times:
-                    metrics["decision_times"] = controller.decision_times
-                    metrics["avg_decision_time"] = sum(controller.decision_times) / len(controller.decision_times) if controller.decision_times else 0
-                
-                # Calculate average metrics
-                if metrics["waiting_times"]:
-                    metrics["avg_waiting_time"] = sum(metrics["waiting_times"]) / len(metrics["waiting_times"])
-                else:
-                    metrics["avg_waiting_time"] = 0
-                
-                if metrics["speeds"]:
-                    metrics["avg_speed"] = sum(metrics["speeds"]) / len(metrics["speeds"])
-                else:
-                    metrics["avg_speed"] = 0
             
         else:
             # Non-GUI simulation - use standard SUMO

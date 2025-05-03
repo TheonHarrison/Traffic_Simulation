@@ -8,10 +8,186 @@ from pathlib import Path
 project_root = Path(__file__).resolve().parent.parent
 sys.path.append(str(project_root))
 
-from src.ui.enhanced_traffic_visualizer import run_enhanced_visualization
+from src.ui.enhanced_sumo_visualization import EnhancedSumoVisualization
+from src.ai.controller_factory import ControllerFactory
+from src.utils.config_utils import create_temp_config
+
+def run_enhanced_visualization(config_path, controller_type, steps=1000, delay=50, model_path=None):
+    """
+    Run the enhanced visualization with a specific controller.
+    
+    Args:
+        config_path: Path to the SUMO configuration file
+        controller_type: Type of controller to use
+        steps: Number of simulation steps to run
+        delay: Delay in milliseconds between steps
+        model_path: Optional path to a specific model file for RL controllers
+    """
+    # Create the visualization
+    visualization = EnhancedSumoVisualization(config_path, width=1024, height=768, use_gui=False)
+    visualization.set_mode(controller_type)
+    
+    # Start the visualization
+    if not visualization.start():
+        print("Failed to start visualization")
+        return
+    
+    try:
+        # Get traffic light IDs
+        import traci
+        tl_ids = traci.trafficlight.getIDList()
+        
+        if not tl_ids:
+            print("No traffic lights found in the simulation!")
+            visualization.close()
+            return
+        
+        # Create controller based on selected type
+        controller_kwargs = {}
+        if model_path and "RL" in controller_type and os.path.exists(model_path):
+            controller_kwargs["model_path"] = model_path
+        
+        # Create the controller
+        controller = ControllerFactory.create_controller(controller_type, tl_ids, **controller_kwargs)
+        
+        print(f"Created {controller_type} controller for traffic lights: {tl_ids}")
+        
+        # Run the simulation for specified number of steps
+        for step in range(steps):
+            # Collect traffic state
+            traffic_state = {}
+            for tl_id in tl_ids:
+                # Get incoming lanes for this traffic light
+                incoming_lanes = []
+                for connection in traci.trafficlight.getControlledLinks(tl_id):
+                    if connection and connection[0]:  # Check if connection exists
+                        incoming_lane = connection[0][0]
+                        if incoming_lane not in incoming_lanes:
+                            incoming_lanes.append(incoming_lane)
+                
+                # Count vehicles and collect metrics for each direction
+                north_count = south_count = east_count = west_count = 0
+                north_wait = south_wait = east_wait = west_wait = 0
+                north_queue = south_queue = east_queue = west_queue = 0
+                
+                for lane in incoming_lanes:
+                    # Determine direction based on lane ID
+                    direction = "unknown"
+                    if "A0A1" in lane or "B0B1" in lane:
+                        direction = "north"
+                    elif "A1A0" in lane or "B1B0" in lane:
+                        direction = "south"
+                    elif "A0B0" in lane or "A1B1" in lane:
+                        direction = "east"
+                    elif "B0A0" in lane or "B1A1" in lane:
+                        direction = "west"
+                    
+                    # Count vehicles on this lane
+                    vehicle_count = traci.lane.getLastStepVehicleNumber(lane)
+                    vehicles = traci.lane.getLastStepVehicleIDs(lane)
+                    waiting_time = sum(traci.vehicle.getWaitingTime(v) for v in vehicles) if vehicles else 0
+                    queue_length = traci.lane.getLastStepHaltingNumber(lane)
+                    
+                    if direction == "north":
+                        north_count += vehicle_count
+                        north_wait += waiting_time
+                        north_queue += queue_length
+                    elif direction == "south":
+                        south_count += vehicle_count
+                        south_wait += waiting_time
+                        south_queue += queue_length
+                    elif direction == "east":
+                        east_count += vehicle_count
+                        east_wait += waiting_time
+                        east_queue += queue_length
+                    elif direction == "west":
+                        west_count += vehicle_count
+                        west_wait += waiting_time
+                        west_queue += queue_length
+                
+                # Calculate average waiting times
+                north_wait_avg = north_wait / max(1, north_count) if north_count > 0 else 0
+                south_wait_avg = south_wait / max(1, south_count) if south_count > 0 else 0
+                east_wait_avg = east_wait / max(1, east_count) if east_count > 0 else 0
+                west_wait_avg = west_wait / max(1, west_count) if west_count > 0 else 0
+                
+                # Store traffic state for this junction
+                traffic_state[tl_id] = {
+                    'north_count': north_count,
+                    'south_count': south_count,
+                    'east_count': east_count,
+                    'west_count': west_count,
+                    'north_wait': north_wait_avg,
+                    'south_wait': south_wait_avg,
+                    'east_wait': east_wait_avg,
+                    'west_wait': west_wait_avg,
+                    'north_queue': north_queue,
+                    'south_queue': south_queue,
+                    'east_queue': east_queue,
+                    'west_queue': west_queue
+                }
+            
+            # Update controller with traffic state
+            controller.update_traffic_state(traffic_state)
+            
+            # Get current simulation time
+            current_time = traci.simulation.getTime()
+            
+            # Get phase decisions from controller for each junction
+            for tl_id in tl_ids:
+                phase = controller.get_phase_for_junction(tl_id, current_time)
+                
+                # Set traffic light phase in SUMO
+                current_sumo_state = traci.trafficlight.getRedYellowGreenState(tl_id)
+                
+                # Only update if phase is different
+                if phase != current_sumo_state:
+                    traci.trafficlight.setRedYellowGreenState(tl_id, phase)
+            
+            # Display step in the simulation
+            if step % 50 == 0:
+                print(f"Step #{step}/{steps} (Time: {current_time:.2f}s)")
+            
+            # Step the visualization
+            result = visualization.step(delay)
+            if not result:
+                break
+        
+        # Close everything properly
+        visualization.close()
+        
+        # Report performance metrics
+        if controller.response_times:
+            avg_resp = sum(controller.response_times) / len(controller.response_times)
+            print(f"Average controller response time: {avg_resp * 1000:.2f} ms")
+        
+        if controller.decision_times:
+            avg_dec = sum(controller.decision_times) / len(controller.decision_times)
+            print(f"Average controller decision time: {avg_dec * 1000:.2f} ms")
+        
+        # Report other simulation metrics
+        wait_times = visualization.performance_metrics["wait_times"]
+        speeds = visualization.performance_metrics["speeds"]
+        throughput = visualization.performance_metrics["throughput"]
+        
+        if wait_times:
+            avg_wait = sum(wait_times) / len(wait_times)
+            print(f"Average wait time: {avg_wait:.2f} seconds")
+        
+        if speeds:
+            avg_speed = sum(speeds) / len(speeds)
+            print(f"Average speed: {avg_speed:.2f} m/s")
+        
+        print(f"Total throughput: {sum(throughput)} vehicles")
+    
+    except Exception as e:
+        print(f"Error during simulation: {e}")
+        import traceback
+        traceback.print_exc()
+        visualization.close()
 
 def main():
-    """Run the enhanced visualization with command line arguments."""
+    """Main function to run the enhanced visualization"""
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Run enhanced traffic visualization')
     parser.add_argument('--scenario', type=str, default=None,
@@ -39,7 +215,8 @@ def main():
             route_file = os.path.join(scenarios_dir, f"{args.scenario}.rou.xml")
             if os.path.exists(route_file):
                 # Create a temporary config file
-                config_path = create_temp_config(route_file)
+                network_file = os.path.join(project_root, "config", "maps", "traffic_grid.net.xml")
+                config_path = create_temp_config(route_file, network_file, project_root)
             else:
                 print(f"Scenario file not found: {route_file}")
                 print(f"Available scenarios:")
@@ -55,51 +232,6 @@ def main():
     
     # Run the visualization
     run_enhanced_visualization(config_path, args.controller, args.steps, args.delay)
-
-def create_temp_config(route_file):
-    """
-    Create a temporary SUMO configuration file.
-    
-    Args:
-        route_file: Path to the route file
-        
-    Returns:
-        Path to the created config file
-    """
-    # Get base name without extension
-    base_name = os.path.basename(route_file).split('.')[0]
-    
-    # Network file
-    network_file = os.path.join(project_root, "config", "maps", "traffic_grid.net.xml")
-    
-    # Create a unique config file name
-    config_name = f"temp_{base_name}.sumocfg"
-    config_path = os.path.join(project_root, "config", "scenarios", config_name)
-    
-    # Write the config file
-    with open(config_path, 'w') as f:
-        f.write(f"""<?xml version="1.0" encoding="UTF-8"?>
-<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
-    <input>
-        <net-file value="{network_file}"/>
-        <route-files value="{route_file}"/>
-    </input>
-    <time>
-        <begin value="0"/>
-        <end value="3600"/>
-        <step-length value="1.0"/>
-    </time>
-    <processing>
-        <time-to-teleport value="-1"/>
-    </processing>
-    <report>
-        <verbose value="false"/>
-        <no-step-log value="true"/>
-    </report>
-</configuration>""")
-    
-    print(f"Generated temporary SUMO config file: {config_path}")
-    return config_path
 
 if __name__ == "__main__":
     main()

@@ -55,10 +55,6 @@ def generate_report(results, output_file=None):
             report.append(f"- **{controller}**: AI-based controller operating over a simulated wired network with fixed latency.")
         elif controller == "Wireless AI":
             report.append(f"- **{controller}**: AI-based controller operating over a simulated wireless network with variable latency and potential packet loss.")
-        elif controller == "Wired RL":
-            report.append(f"- **{controller}**: Reinforcement learning controller operating over a simulated wired network.")
-        elif controller == "Wireless RL":
-            report.append(f"- **{controller}**: Reinforcement learning controller operating over a simulated wireless network with variable latency and potential packet loss.")
     report.append("")
     
     # Scenarios Tested
@@ -154,7 +150,7 @@ def generate_report(results, output_file=None):
         report.append("### Traditional vs. AI-based Controllers")
         
         trad_summary = results["summary"]["Traditional"]
-        ai_controllers = [c for c in controllers if "AI" in c and "RL" not in c]
+        ai_controllers = [c for c in controllers if "AI" in c]
         
         # Calculate averages for AI controllers
         ai_wait = sum(results["summary"][c]["avg_waiting_time"] for c in ai_controllers) / len(ai_controllers)
@@ -192,85 +188,6 @@ def generate_report(results, output_file=None):
         report.append(f"- **Throughput**: {'AI-based' if throughput_diff_pct > 0 else 'Traditional'} controllers performed better by {abs(throughput_diff_pct):.1f}%")
         report.append("")
     
-    # 3. RL vs. Basic AI Comparison
-    ai_controllers = [c for c in controllers if "AI" in c and "RL" not in c]
-    rl_controllers = [c for c in controllers if "RL" in c]
-    
-    if ai_controllers and rl_controllers:
-        report.append("### Reinforcement Learning vs. Basic AI Controllers")
-        
-        # Calculate averages
-        ai_wait = sum(results["summary"][c]["avg_waiting_time"] for c in ai_controllers) / len(ai_controllers)
-        ai_speed = sum(results["summary"][c]["avg_speed"] for c in ai_controllers) / len(ai_controllers)
-        ai_throughput = sum(results["summary"][c]["throughput"] for c in ai_controllers) / len(ai_controllers)
-        
-        rl_wait = sum(results["summary"][c]["avg_waiting_time"] for c in rl_controllers) / len(rl_controllers)
-        rl_speed = sum(results["summary"][c]["avg_speed"] for c in rl_controllers) / len(rl_controllers)
-        rl_throughput = sum(results["summary"][c]["throughput"] for c in rl_controllers) / len(rl_controllers)
-        
-        # Calculate percentage differences
-        wait_diff_pct = (ai_wait - rl_wait) / ai_wait * 100
-        speed_diff_pct = (rl_speed - ai_speed) / ai_speed * 100
-        throughput_diff_pct = (rl_throughput - ai_throughput) / ai_throughput * 100
-        
-        # Determine which is better overall
-        metrics_better = [
-            wait_diff_pct > 0,  # RL better if waiting time is lower
-            speed_diff_pct > 0,  # RL better if speed is higher
-            throughput_diff_pct > 0  # RL better if throughput is higher
-        ]
-        
-        rl_better_count = sum(metrics_better)
-        ai_better_count = len(metrics_better) - rl_better_count
-        
-        if rl_better_count > ai_better_count:
-            overall_better = "reinforcement learning"
-        elif ai_better_count > rl_better_count:
-            overall_better = "basic AI"
-        else:
-            overall_better = "neither"
-        
-        # Write findings
-        report.append(f"Overall, the **{overall_better}** controller performed better across the tested scenarios.")
-        report.append("")
-        report.append("Performance differences:")
-        report.append(f"- **Waiting Time**: {'Reinforcement Learning' if wait_diff_pct > 0 else 'Basic AI'} controllers performed better by {abs(wait_diff_pct):.1f}%")
-        report.append(f"- **Average Speed**: {'Reinforcement Learning' if speed_diff_pct > 0 else 'Basic AI'} controllers performed better by {abs(speed_diff_pct):.1f}%")
-        report.append(f"- **Throughput**: {'Reinforcement Learning' if throughput_diff_pct > 0 else 'Basic AI'} controllers performed better by {abs(throughput_diff_pct):.1f}%")
-        report.append("")
-    
-    # Scenario-specific observations
-    report.append("### Scenario-specific Observations")
-    
-    for scenario in scenarios:
-        report.append(f"#### {scenario.replace('_', ' ').title()}")
-        
-        # Find best controller for this scenario based on waiting time
-        best_controller = None
-        best_wait_time = float('inf')
-        
-        for controller in controllers:
-            if controller in results["scenarios"][scenario]:
-                wait_time = results["scenarios"][scenario][controller]["avg_metrics"].get("avg_waiting_time", float('inf'))
-                if wait_time < best_wait_time:
-                    best_wait_time = wait_time
-                    best_controller = controller
-        
-        report.append(f"- Best performing controller: **{best_controller}** (Avg. waiting time: {best_wait_time:.2f}s)")
-        
-        # Add more scenario-specific observations
-        # For example, compare wireless vs. wired in this scenario if both exist
-        if "Wired AI" in results["scenarios"][scenario] and "Wireless AI" in results["scenarios"][scenario]:
-            wired_wait = results["scenarios"][scenario]["Wired AI"]["avg_metrics"]["avg_waiting_time"]
-            wireless_wait = results["scenarios"][scenario]["Wireless AI"]["avg_metrics"]["avg_waiting_time"]
-            
-            if wired_wait < wireless_wait:
-                report.append(f"- In this scenario, wired communication performed {(wireless_wait/wired_wait - 1)*100:.1f}% better than wireless in terms of waiting time.")
-            else:
-                report.append(f"- In this scenario, wireless communication performed {(wired_wait/wireless_wait - 1)*100:.1f}% better than wired in terms of waiting time.")
-        
-        report.append("")
-    
     # Conclusions
     report.append("## Conclusions")
     report.append("Based on the comprehensive comparison of different traffic control systems across various scenarios, the following conclusions can be drawn:")
@@ -302,7 +219,7 @@ def generate_report(results, output_file=None):
     # Add conclusion about AI vs. traditional if both exist
     if "Traditional" in controllers and any(c for c in controllers if "AI" in c):
         trad_wait = results["summary"]["Traditional"]["avg_waiting_time"]
-        ai_controllers = [c for c in controllers if "AI" in c or "RL" in c]
+        ai_controllers = [c for c in controllers if "AI" in c]
         ai_wait = sum(results["summary"][c]["avg_waiting_time"] for c in ai_controllers) / len(ai_controllers)
         
         if ai_wait < trad_wait:
