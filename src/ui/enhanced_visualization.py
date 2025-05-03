@@ -1,19 +1,15 @@
 # src/ui/enhanced_visualization.py
+
 import pygame
 import os
 import sys
-import traci
 from pathlib import Path
 
 # Add project root to the Python path
 project_root = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(project_root))
 
-from src.ui.visualization import Visualization
-from src.ui.enhanced_renderer import EnhancedTrafficRenderer
-from src.ui.sumo_pygame_mapper import SumoNetworkParser, SumoPygameMapper
-
-class EnhancedVisualization(Visualization):
+class EnhancedVisualization:
     """
     Enhanced visualization with improved graphics for traffic simulation.
     """
@@ -27,20 +23,37 @@ class EnhancedVisualization(Visualization):
             title (str): Title of the window
             net_file (str): Path to the SUMO network file
         """
-        # Call the parent class constructor
-        super().__init__(width, height, title, net_file)
+        # Initialize pygame
+        pygame.init()
         
-        # Set a higher initial zoom
-        self.zoom = 2.0
+        # Set up the display
+        self.width = width
+        self.height = height
+        self.screen = pygame.display.set_mode((width, height))
+        pygame.display.set_caption(title)
         
-        # Center the view initially
-        self._center_view()
+        # Clock for controlling frame rate
+        self.clock = pygame.time.Clock()
+        self.fps = 30
         
-        # Create enhanced renderer when network is loaded
-        self.enhanced_renderer = None
-        if self.mapper:
-            self.enhanced_renderer = EnhancedTrafficRenderer(self.screen, self.mapper, 
-                                                           self.offset_x, self.offset_y, self.zoom)
+        # Load assets
+        self.assets_path = Path(__file__).resolve().parent.parent.parent / "assets"
+        self.assets = self._load_assets()
+        
+        # SUMO Network mapping
+        self.net_file = net_file
+        self.network_parser = None
+        self.mapper = None
+        if net_file:
+            self._setup_network_mapping()
+        
+        # Simulation view settings
+        self.offset_x = 0
+        self.offset_y = 0
+        self.zoom = 2.0  # Higher default zoom
+        
+        # Font for displaying information
+        self.font = pygame.font.SysFont("Arial", 16)
         
         # Mouse tracking for dragging
         self.dragging = False
@@ -63,6 +76,111 @@ class EnhancedVisualization(Visualization):
         
         print("Enhanced visualization initialized")
     
+    def _load_assets(self):
+        """Load image assets for the visualization"""
+        assets = {}
+        
+        # Create the assets directory if it doesn't exist
+        os.makedirs(self.assets_path, exist_ok=True)
+        
+        # For now, return empty assets dictionary
+        # We'll add real assets later
+        return assets
+    
+    def _setup_network_mapping(self):
+        """Set up the SUMO to Pygame coordinate mapping."""
+        if not os.path.exists(self.net_file):
+            print(f"Warning: Network file not found: {self.net_file}")
+            return
+        
+        try:
+            from src.ui.sumo_pygame_mapper import SumoNetworkParser, SumoPygameMapper
+            self.network_parser = SumoNetworkParser(self.net_file)
+            self.mapper = SumoPygameMapper(self.network_parser, self.width, self.height)
+            print("SUMO network successfully loaded and mapped to Pygame coordinates")
+        except Exception as e:
+            print(f"Error setting up network mapping: {str(e)}")
+    
+    def handle_events(self):
+        """Handle pygame events and return whether to continue running"""
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return False
+            elif event.type == pygame.KEYDOWN:
+                # Press ESC to quit
+                if event.key == pygame.K_ESCAPE:
+                    return False
+                # Toggle vehicle IDs with I key
+                elif event.key == pygame.K_i:
+                    self.show_ids = not self.show_ids
+                    print(f"Vehicle IDs display: {'On' if self.show_ids else 'Off'}")
+                # Toggle speed display with S key
+                elif event.key == pygame.K_s:
+                    self.show_speeds = not self.show_speeds
+                    print(f"Vehicle speeds display: {'On' if self.show_speeds else 'Off'}")
+                # Toggle waiting time display with W key
+                elif event.key == pygame.K_w:
+                    self.show_waiting = not self.show_waiting
+                    print(f"Vehicle waiting times display: {'On' if self.show_waiting else 'Off'}")
+            # Handle mouse panning with left button
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:  # Left mouse button
+                    self.dragging = True
+                    self.drag_start = event.pos
+                # Mouse wheel zooming
+                elif event.button == 4:  # Scroll up
+                    self.zoom *= 1.1
+                elif event.button == 5:  # Scroll down
+                    self.zoom /= 1.1
+            elif event.type == pygame.MOUSEBUTTONUP:
+                if event.button == 1:  # Left mouse button
+                    self.dragging = False
+            elif event.type == pygame.MOUSEMOTION:
+                if self.dragging:
+                    # Calculate the drag distance
+                    dx = event.pos[0] - self.drag_start[0]
+                    dy = event.pos[1] - self.drag_start[1]
+                    self.offset_x += dx
+                    self.offset_y += dy
+                    self.drag_start = event.pos
+        
+        return True
+    
+    def clear(self):
+        """Clear the screen to prepare for drawing"""
+        self.screen.fill((240, 240, 240))  # Light gray background
+    
+    def draw_text(self, text, x, y, color=(0, 0, 0)):
+        """Draw text on the screen"""
+        text_surface = self.font.render(text, True, color)
+        self.screen.blit(text_surface, (x, y))
+    
+    def draw_stats(self, stats):
+        """Draw simulation statistics"""
+        # Create a semi-transparent background for stats
+        stats_bg = pygame.Surface((250, len(stats) * 20 + 10), pygame.SRCALPHA)
+        stats_bg.fill((240, 240, 255, 200))  # Semi-transparent background
+        self.screen.blit(stats_bg, (5, 5))
+        
+        # Draw stats
+        y_offset = 10
+        for key, value in stats.items():
+            self.draw_text(f"{key}: {value}", 10, y_offset)
+            y_offset += 20
+    
+    def draw_help(self):
+        """Draw help text with keybinding information"""
+        y_offset = self.height - len(self.controls_help) * 20 - 10
+        
+        # Create a semi-transparent background for help text
+        help_bg = pygame.Surface((300, len(self.controls_help) * 20 + 10), pygame.SRCALPHA)
+        help_bg.fill((240, 240, 255, 200))  # Semi-transparent background
+        self.screen.blit(help_bg, (5, y_offset - 5))
+        
+        # Draw help text
+        for i, help_text in enumerate(self.controls_help):
+            self.draw_text(help_text, 10, y_offset + i * 20)
+    
     def _center_view(self):
         """Center the view on the network"""
         if self.mapper:
@@ -78,117 +196,11 @@ class EnhancedVisualization(Visualization):
             self.offset_x = self.width / 2 - center_x * self.zoom * self.mapper.scale
             self.offset_y = self.height / 2 - center_y * self.zoom * self.mapper.scale
     
-    def handle_events(self):
-        """Handle pygame events and return whether to continue running"""
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                return False
-            elif event.type == pygame.KEYDOWN:
-                # Press ESC to quit
-                if event.key == pygame.K_ESCAPE:
-                    return False
-                # Toggle vehicle IDs
-                elif event.key == pygame.K_i:
-                    if self.enhanced_renderer:
-                        self.show_ids = self.enhanced_renderer.toggle_vehicle_ids()
-                # Toggle speed display
-                elif event.key == pygame.K_s:
-                    if self.enhanced_renderer:
-                        self.show_speeds = self.enhanced_renderer.toggle_speeds()
-                # Toggle waiting time display
-                elif event.key == pygame.K_w:
-                    if self.enhanced_renderer:
-                        self.show_waiting = self.enhanced_renderer.toggle_waiting_times()
-            # Handle mouse panning with left button
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1:  # Left mouse button
-                    self.dragging = True
-                    self.drag_start = event.pos
-                # Mouse wheel zooming
-                elif event.button == 4:  # Scroll up
-                    self.zoom *= 1.1
-                    if self.enhanced_renderer:
-                        self.enhanced_renderer.update_view_settings(
-                            self.offset_x, self.offset_y, self.zoom)
-                elif event.button == 5:  # Scroll down
-                    self.zoom /= 1.1
-                    if self.enhanced_renderer:
-                        self.enhanced_renderer.update_view_settings(
-                            self.offset_x, self.offset_y, self.zoom)
-            elif event.type == pygame.MOUSEBUTTONUP:
-                if event.button == 1:  # Left mouse button
-                    self.dragging = False
-            elif event.type == pygame.MOUSEMOTION:
-                if self.dragging:
-                    # Calculate the drag distance
-                    dx = event.pos[0] - self.drag_start[0]
-                    dy = event.pos[1] - self.drag_start[1]
-                    self.offset_x += dx
-                    self.offset_y += dy
-                    self.drag_start = event.pos
-                    
-                    # Update the renderer view settings
-                    if self.enhanced_renderer:
-                        self.enhanced_renderer.update_view_settings(
-                            self.offset_x, self.offset_y, self.zoom)
-        
-        # Update the renderer view settings if it exists
-        if self.enhanced_renderer:
-            self.enhanced_renderer.update_view_settings(self.offset_x, self.offset_y, self.zoom)
-        
-        return True
+    def update(self):
+        """Update the display"""
+        pygame.display.flip()
+        self.clock.tick(self.fps)
     
-    def draw_vehicle(self, position, size=(10, 5), color=(0, 100, 200), angle=0):
-        """Override to use enhanced renderer if available"""
-        if self.enhanced_renderer:
-            # This is just a compatibility method - real rendering is done through the renderer
-            pass
-        else:
-            # Fall back to original method
-            super().draw_vehicle(position, size, color, angle)
-    
-    def draw_traffic_light(self, position, state):
-        """Override to use enhanced renderer if available"""
-        if self.enhanced_renderer:
-            # This is just a compatibility method - real rendering is done through the renderer
-            pass
-        else:
-            # Fall back to original method
-            super().draw_traffic_light(position, state)
-    
-    def draw_road(self, start_pos, end_pos, width=10):
-        """Override to use enhanced renderer if available"""
-        if self.enhanced_renderer:
-            # This is just a compatibility method - real rendering is done through the renderer
-            pass
-        else:
-            # Fall back to original method
-            super().draw_road(start_pos, end_pos, width)
-    
-    def draw_intersection(self, position, size=20):
-        """Override to use enhanced renderer if available"""
-        if self.enhanced_renderer:
-            # This is just a compatibility method - real rendering is done through the renderer
-            pass
-        else:
-            # Fall back to original method
-            super().draw_intersection(position, size)
-    
-    def draw_help(self):
-        """Draw help text with keybinding information"""
-        y_offset = self.height - len(self.controls_help) * 20 - 10
-        for i, help_text in enumerate(self.controls_help):
-            text = self.font.render(help_text, True, (50, 50, 50))
-            self.screen.blit(text, (10, y_offset + i * 20))
-    
-    def draw_sumo_network(self):
-        """Draw the SUMO network using the enhanced renderer if available"""
-        if self.enhanced_renderer:
-            self.enhanced_renderer.render_network()
-            
-            # Render junctions
-            for node_id in self.network_parser.nodes:
-                self.enhanced_renderer.render_junction(node_id)
-        else:
-            # Fall back to original method
-            super().draw_sumo_network()
+    def close(self):
+        """Close the visualization"""
+        pygame.quit()

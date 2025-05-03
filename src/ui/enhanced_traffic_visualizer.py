@@ -4,6 +4,8 @@ import sys
 import argparse
 import traci
 from pathlib import Path
+import glob
+import re
 
 # Add the project root to the Python path
 project_root = Path(__file__).resolve().parent.parent.parent
@@ -14,7 +16,55 @@ import time
 from src.ui.enhanced_sumo_visualization import EnhancedSumoVisualization
 from src.ai.controller_factory import ControllerFactory
 
-def run_enhanced_visualization(config_path, controller_type, steps=1000, delay=50):
+def find_latest_model(controller_type):
+    """
+    Find the latest trained model for the specified controller type.
+    
+    Args:
+        controller_type (str): Type of controller ("Wired RL" or "Wireless RL")
+    
+    Returns:
+        str or None: Path to the latest model file, or None if no model is found
+    """
+    # Convert controller type to filename format
+    model_prefix = controller_type.replace(' ', '_').lower()
+    
+    # Define the models directory
+    models_dir = os.path.join(project_root, "data", "models")
+    
+    if not os.path.exists(models_dir):
+        print(f"Models directory not found: {models_dir}")
+        return None
+    
+    # Find all model files for this controller type
+    model_pattern = os.path.join(models_dir, f"{model_prefix}_episode_*.pkl")
+    model_files = glob.glob(model_pattern)
+    
+    if not model_files:
+        print(f"No existing models found for {controller_type}")
+        return None
+    
+    # Extract episode numbers and find the highest one
+    episode_numbers = []
+    for model_file in model_files:
+        match = re.search(r'_episode_(\d+)\.pkl$', model_file)
+        if match:
+            episode_numbers.append((int(match.group(1)), model_file))
+    
+    if not episode_numbers:
+        print(f"Could not parse episode numbers from model filenames")
+        return None
+    
+    # Sort by episode number and get the latest
+    episode_numbers.sort(key=lambda x: x[0], reverse=True)
+    latest_episode, latest_model = episode_numbers[0]
+    
+    print(f"Found latest model for {controller_type}: Episode {latest_episode}")
+    print(f"Model path: {latest_model}")
+    
+    return latest_model
+
+def run_enhanced_visualization(config_path, controller_type, steps=1000, delay=50, model_path=None):
     """
     Run the enhanced visualization with a specific controller.
     
@@ -23,6 +73,7 @@ def run_enhanced_visualization(config_path, controller_type, steps=1000, delay=5
         controller_type: Type of controller to use
         steps: Number of simulation steps to run
         delay: Delay in milliseconds between steps
+        model_path: Optional path to a specific model file for RL controllers
     """
     # Create the visualization
     visualization = EnhancedSumoVisualization(config_path, width=1024, height=768, use_gui=False)
@@ -43,7 +94,25 @@ def run_enhanced_visualization(config_path, controller_type, steps=1000, delay=5
             return
         
         # Create controller based on selected type
-        controller = ControllerFactory.create_controller(controller_type, tl_ids)
+        controller_kwargs = {}
+        
+        # For RL controllers, find and use the appropriate model
+        if "RL" in controller_type:
+            # If model path is provided directly, use it
+            if model_path and os.path.exists(model_path):
+                controller_kwargs["model_path"] = model_path
+                print(f"Using specified model: {model_path}")
+            # Otherwise, find the latest trained model
+            else:
+                latest_model = find_latest_model(controller_type)
+                if latest_model:
+                    controller_kwargs["model_path"] = latest_model
+                    print(f"Using latest model: {latest_model}")
+                else:
+                    print(f"Warning: No model found for {controller_type}. Will use default parameters.")
+        
+        # Create the controller
+        controller = ControllerFactory.create_controller(controller_type, tl_ids, **controller_kwargs)
         
         print(f"Created {controller_type} controller for traffic lights: {tl_ids}")
         
@@ -185,12 +254,14 @@ def main():
     parser.add_argument('--scenario', type=str, default=None,
                         help='Scenario file to run (without .sumocfg extension)')
     parser.add_argument('--controller', type=str, default="Wired AI",
-                        choices=["Wired AI", "Wireless AI", "Traditional"],
+                        choices=["Wired AI", "Wireless AI", "Traditional", "Wired RL", "Wireless RL"],
                         help='Controller type to use')
     parser.add_argument('--steps', type=int, default=1000,
                         help='Number of simulation steps to run')
     parser.add_argument('--delay', type=int, default=50,
                         help='Delay in milliseconds between steps')
+    parser.add_argument('--model', type=str, default=None,
+                        help='Specific model path for RL controllers (optional)')
     args = parser.parse_args()
     
     # Determine which configuration file to use
@@ -207,7 +278,7 @@ def main():
     print(f"Using configuration file: {config_path}")
     
     # Run the visualization
-    run_enhanced_visualization(config_path, args.controller, args.steps, args.delay)
+    run_enhanced_visualization(config_path, args.controller, args.steps, args.delay, args.model)
 
 if __name__ == "__main__":
     main()

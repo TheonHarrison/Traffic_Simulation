@@ -1,8 +1,9 @@
+# src/run_comprehensive_comparison.py
 import os
 import sys
 import argparse
-import uuid
 from pathlib import Path
+from datetime import datetime
 
 # Add the project root to the Python path
 project_root = Path(__file__).resolve().parent.parent
@@ -13,86 +14,46 @@ from src.comparison_framework import ComparisonFramework
 def main():
     """Run a comprehensive comparison of all controllers across all scenarios."""
     parser = argparse.ArgumentParser(description='Run comprehensive traffic controller comparison')
-    parser.add_argument('--exclude-rl', action='store_true',
-                        help='Exclude reinforcement learning controllers from comparison')
+    parser.add_argument('--scenarios', type=str, nargs='+',
+                        help='Specific scenarios to test')
+    parser.add_argument('--controllers', type=str, nargs='+',
+                        choices=["Traditional", "Wired AI", "Wireless AI"],
+                        help='Specific controller types to test')
     parser.add_argument('--steps', type=int, default=1000,
                         help='Number of simulation steps per run')
     parser.add_argument('--runs', type=int, default=3,
                         help='Number of runs per configuration')
     parser.add_argument('--gui', action='store_true',
-                        help='Show Python visualization GUI during simulation')
+                        help='Show visualization GUI during simulation')
+    parser.add_argument('--output', type=str, default=None,
+                        help='Directory to save results')
     parser.add_argument('--summary-only', action='store_true',
                         help='Only generate summary visualization, not detailed charts')
+    parser.add_argument('--run-id', type=str, default=None,
+                        help='Identifier for this comparison run')
     args = parser.parse_args()
     
-    # Generate a unique run ID for folder organization
-    run_id = uuid.uuid4().hex[:8]
+    # Generate a unique run ID if not provided
+    if args.run_id is None:
+        args.run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
     
-    # Initialize the comparison framework with the run ID
-    comparison = ComparisonFramework(run_id=run_id)
+    # Initialize the comparison framework with specified run ID
+    comparison = ComparisonFramework(output_dir=args.output, run_id=args.run_id)
     
-    # Select controller types (include RL by default)
-    controller_types = ["Traditional", "Wired AI", "Wireless AI"]
-    
-    if not args.exclude_rl:
-        controller_types.extend(["Wired RL", "Wireless RL"])
-        
-        # Find RL model paths
-        model_paths = {}
-        models_dir = os.path.join(project_root, "data", "models")
-        
-        if os.path.exists(models_dir):
-            # Look for the most recent model for each RL controller type
-            for controller_type in ["wired_rl", "wireless_rl"]:
-                model_files = [f for f in os.listdir(models_dir) 
-                             if f.startswith(controller_type) and f.endswith('.pkl')]
-                if model_files:
-                    try:
-                        # Sort by episode number to get the most recent
-                        model_files.sort(key=lambda x: int(x.split('_episode_')[1].split('.')[0]))
-                        newest_model = os.path.join(models_dir, model_files[-1])
-                        
-                        # Map to controller type
-                        if controller_type == "wired_rl":
-                            model_paths["Wired RL"] = newest_model
-                            print(f"Found model for Wired RL: {newest_model}")
-                        elif controller_type == "wireless_rl":
-                            model_paths["Wireless RL"] = newest_model
-                            print(f"Found model for Wireless RL: {newest_model}")
-                    except (IndexError, ValueError) as e:
-                        print(f"Error parsing model files for {controller_type}: {e}")
-                else:
-                    print(f"No model files found for {controller_type}")
-        else:
-            print(f"Models directory not found: {models_dir}")
-            model_paths = None
-    else:
-        model_paths = None
-    
-    # Define scenarios to test
-    scenarios = [
-        "light_traffic",
-        "moderate_traffic", 
-        "heavy_traffic",
-        "peak_hour_morning"
-    ]
-    
-    print(f"Running comprehensive comparison with controllers: {controller_types}")
-    print(f"Testing scenarios: {scenarios}")
+    print(f"\n{'='*80}")
+    print(f"Running comprehensive comparison with controllers: {args.controllers or comparison.controller_types}")
+    print(f"Testing scenarios: {args.scenarios or comparison.scenarios}")
     print(f"Using {args.runs} runs per configuration, {args.steps} steps per run")
-    print(f"Results will be stored in folder: Comparison_{run_id}")
-    
-    if model_paths:
-        print(f"Using model paths: {model_paths}")
+    print(f"Results will be stored in folder: Comparison_{args.run_id}")
+    print(f"{'='*80}\n")
     
     # Run the comparison
     results = comparison.run_comparison(
-        scenarios=scenarios,
-        controller_types=controller_types,
+        scenarios=args.scenarios,
+        controller_types=args.controllers,
         steps=args.steps,
         runs_per_config=args.runs,
-        gui=args.gui,  # This now controls Python visualization, not SUMO GUI
-        model_paths=model_paths
+        gui=args.gui
     )
     
     # If summary-only flag is set, regenerate visualizations with only summary
@@ -102,14 +63,14 @@ def main():
     
     # Print overall summary
     if results:
+        controllers = list(results["summary"].keys())
         print("\nOverall Performance Summary:")
         print("=" * 80)
         
-        for controller in controller_types:
-            if controller in results["summary"]:
-                print(f"\n{controller}:")
-                for metric, value in results["summary"][controller].items():
-                    print(f"  {metric}: {value:.4f}")
+        for controller in controllers:
+            print(f"\n{controller}:")
+            for metric, value in results["summary"][controller].items():
+                print(f"  {metric}: {value:.4f}")
     else:
         print("No results were generated. Please check for errors above.")
 

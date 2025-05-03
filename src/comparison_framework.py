@@ -1,6 +1,6 @@
+# src/comparison_framework.py
 import os
 import sys
-import argparse
 import json
 import time
 import matplotlib.pyplot as plt
@@ -41,21 +41,12 @@ class ComparisonFramework:
         # Initialize the scenario runner
         self.scenario_runner = ScenarioRunner()
         
-        # Define controller types for comparison (including RL by default)
+        # Define controller types for comparison
         self.controller_types = [
             "Traditional", 
             "Wired AI", 
             "Wireless AI"
         ]
-        
-        # Check if RL controllers are available
-        try:
-            from src.ai.reinforcement_learning.wired_rl_controller import WiredRLController
-            from src.ai.reinforcement_learning.wireless_rl_controller import WirelessRLController
-            self.rl_available = True
-            self.controller_types.extend(["Wired RL", "Wireless RL"])
-        except ImportError:
-            self.rl_available = False
         
         # Define scenarios to test
         self.scenarios = [
@@ -84,8 +75,8 @@ class ComparisonFramework:
             controller_types: List of controller types to test (default: all available)
             steps: Number of simulation steps per run
             runs_per_config: Number of runs for each scenario-controller combination
-            gui: Whether to show Python visualization GUI (not SUMO GUI)
-            model_paths: Dictionary mapping RL controller types to model paths
+            gui: Whether to show visualization GUI
+            model_paths: Dictionary mapping controller types to model paths
             
         Returns:
             dict: Comprehensive comparison results
@@ -129,14 +120,9 @@ class ComparisonFramework:
             scenario_results = {}
             
             for controller_type in valid_controllers:
-                # Skip RL controllers if not available
-                if controller_type in ["Wired RL", "Wireless RL"] and not self.rl_available:
-                    print(f"Skipping {controller_type} (not available)")
-                    continue
-                
                 print(f"\nTesting {controller_type} on {scenario}...")
                 
-                # Get model path for RL controllers if available
+                # Get model path for controllers if available
                 model_path = None
                 if model_paths and controller_type in model_paths:
                     model_path = model_paths[controller_type]
@@ -152,14 +138,14 @@ class ComparisonFramework:
                 for run in range(runs_per_config):
                     print(f"  Run {run+1}/{runs_per_config}...")
                     
-                    # Run the scenario - pass the Python GUI flag, not SUMO GUI
+                    # Run the scenario
                     run_metrics = self.scenario_runner.run_scenario(
                         scenario_file=os.path.join(project_root, "config", "scenarios", f"{scenario}.rou.xml"),
                         controller_type=controller_type,
                         steps=steps,
-                        gui=gui,  # This now controls Python visualization
+                        gui=gui,
                         collect_metrics=True,
-                        model_path=model_path if controller_type in ["Wired RL", "Wireless RL"] else None
+                        model_path=model_path
                     )
                     
                     # Store run results
@@ -252,7 +238,7 @@ class ComparisonFramework:
             # 2. Detailed comparison by scenario
             self._plot_scenario_comparison(results, controllers, scenarios, vis_dir, timestamp)
             
-            # 3. Controller performance profile - removed radar charts
+            # 3. Controller performance profile
             self._plot_controller_profiles(results, controllers, scenarios, vis_dir, timestamp)
     
     def _plot_summary_comparison(self, results, controllers, output_dir, timestamp):
@@ -261,12 +247,16 @@ class ComparisonFramework:
         fig, axs = plt.subplots(len(self.metrics), 1, figsize=(12, 4 * len(self.metrics)))
         fig.suptitle('Summary Comparison Across All Scenarios', fontsize=16)
         
+        # Ensure axs is always a list for consistent indexing
+        if len(self.metrics) == 1:
+            axs = [axs]
+        
         # Colors for controllers
         colors = plt.cm.tab10(np.linspace(0, 1, len(controllers)))
         
         # Plot each metric
         for i, metric in enumerate(self.metrics):
-            ax = axs[i] if len(self.metrics) > 1 else axs
+            ax = axs[i]
             
             # Get values for each controller
             values = [results["summary"][controller].get(metric, 0) for controller in controllers]
@@ -277,7 +267,7 @@ class ComparisonFramework:
             # Add values on top of bars
             for j, bar in enumerate(bars):
                 height = bar.get_height()
-                ax.text(bar.get_x() + bar.get_width()/2., height + 0.02 * max(values),
+                ax.text(bar.get_x() + bar.get_width()/2., height + 0.02 * max(values) if values else 0,
                         f'{values[j]:.2f}', ha='center', va='bottom')
             
             # Set labels and title
@@ -321,7 +311,7 @@ class ComparisonFramework:
                 # Add values on top of bars
                 for j, bar in enumerate(bars):
                     height = bar.get_height()
-                    ax.text(bar.get_x() + bar.get_width()/2., height + 0.02 * max(values),
+                    ax.text(bar.get_x() + bar.get_width()/2., height + 0.02 * max(values) if values else 0,
                            f'{values[j]:.2f}', ha='center', va='bottom', fontsize=8)
             
             # Set labels and title
@@ -366,7 +356,7 @@ class ComparisonFramework:
                 
                 # Add value labels
                 for j, value in enumerate(values):
-                    ax.text(j, value + 0.02 * max(values), f'{value:.2f}', 
+                    ax.text(j, value + 0.02 * max(values) if values else 0, f'{value:.2f}', 
                            ha='center', va='bottom', fontsize=8)
                 
                 # Set labels and title
@@ -380,76 +370,3 @@ class ComparisonFramework:
             plt.tight_layout(rect=[0, 0.03, 1, 0.95])
             plt.savefig(os.path.join(output_dir, f'{controller}_profile_{timestamp}.png'), dpi=300)
             plt.close()
-
-def main():
-    """Run the comparison framework as a script."""
-    parser = argparse.ArgumentParser(description='Run traffic controller comparison framework')
-    parser.add_argument('--scenarios', type=str, nargs='+',
-                        help='Specific scenarios to test')
-    parser.add_argument('--controllers', type=str, nargs='+',
-                        choices=["Traditional", "Wired AI", "Wireless AI", "Wired RL", "Wireless RL"],
-                        help='Specific controller types to test')
-    parser.add_argument('--steps', type=int, default=1000,
-                        help='Number of simulation steps per run')
-    parser.add_argument('--runs', type=int, default=3,
-                        help='Number of runs per configuration')
-    parser.add_argument('--gui', action='store_true',
-                        help='Show Python visualization GUI during simulation')
-    parser.add_argument('--output', type=str, default=None,
-                        help='Directory to save results')
-    parser.add_argument('--summary-only', action='store_true',
-                        help='Only generate summary visualization, not detailed charts')
-    parser.add_argument('--run-id', type=str, default=None,
-                        help='Identifier for this comparison run')
-    args = parser.parse_args()
-    
-    # Initialize the comparison framework with specified run ID
-    comparison = ComparisonFramework(output_dir=args.output, run_id=args.run_id)
-    
-    # Find RL model paths if available
-    model_paths = {}
-    models_dir = os.path.join(project_root, "data", "models")
-    
-    if os.path.exists(models_dir):
-        # Look for the most recent model for each RL controller type
-        for controller_type in ["wired_rl", "wireless_rl"]:
-            model_files = [f for f in os.listdir(models_dir) 
-                         if f.startswith(controller_type) and f.endswith('.pkl')]
-            if model_files:
-                # Sort by episode number to get the most recent
-                model_files.sort(key=lambda x: int(x.split('_episode_')[1].split('.')[0]))
-                newest_model = os.path.join(models_dir, model_files[-1])
-                
-                # Map to controller type
-                if controller_type == "wired_rl":
-                    model_paths["Wired RL"] = newest_model
-                elif controller_type == "wireless_rl":
-                    model_paths["Wireless RL"] = newest_model
-    
-    # Run the comparison
-    results = comparison.run_comparison(
-        scenarios=args.scenarios,
-        controller_types=args.controllers,
-        steps=args.steps,
-        runs_per_config=args.runs,
-        gui=args.gui,  # This now controls the Python visualization
-        model_paths=model_paths
-    )
-    
-    # Generate visualizations with summary_only flag
-    if results and args.summary_only:
-        # Re-run visualization with summary_only=True
-        comparison.visualize_comparison(results, summary_only=True)
-        
-        # Print summary
-        print("\nOverall Performance Summary:")
-        print("=" * 80)
-        
-        controllers = list(results["summary"].keys())
-        for controller in controllers:
-            print(f"\n{controller}:")
-            for metric, value in results["summary"][controller].items():
-                print(f"  {metric}: {value:.4f}")
-
-if __name__ == "__main__":
-    main()
