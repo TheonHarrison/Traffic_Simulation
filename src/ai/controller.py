@@ -16,7 +16,7 @@ class TrafficController(abc.ABC):
             junction_ids (list): List of junction IDs to control
         """
         self.junction_ids = junction_ids
-        # Initialize current_phase to None, we will decide a phase at first call
+        # Initialize current_phase to None, we will decide a phase at first step
         self.current_phase = {junction_id: None for junction_id in junction_ids}
         self.phase_durations = {}  # Will be set by subclasses
         self.last_change_time = {junction_id: 0 for junction_id in junction_ids}
@@ -27,6 +27,12 @@ class TrafficController(abc.ABC):
 
         # Traffic state information
         self.traffic_state = {}
+        
+        # Store the expected traffic light state lengths for each junction
+        self.tl_state_lengths = {}
+        
+        # Initialize phase sequence
+        self.phase_sequence = ["GrYr", "yrGr", "rGry", "ryrG"]
 
     def update_traffic_state(self, traffic_state):
         """
@@ -64,6 +70,18 @@ class TrafficController(abc.ABC):
         Returns:
             str: Traffic light state string
         """
+        import traci
+        
+        # Initialize tl_state_lengths if not already done
+        if junction_id not in self.tl_state_lengths:
+            try:
+                # Get the current state to determine expected length
+                current_state = traci.trafficlight.getRedYellowGreenState(junction_id)
+                self.tl_state_lengths[junction_id] = len(current_state)
+            except:
+                # Default value if we can't get the current state
+                self.tl_state_lengths[junction_id] = 4  # Default length
+        
         current = self.current_phase[junction_id]
 
         # If no valid phase yet or if phase duration expired, decide a new phase
@@ -85,8 +103,30 @@ class TrafficController(abc.ABC):
             self.current_phase[junction_id] = new_phase
             self.last_change_time[junction_id] = current_time
 
+            # Adjust phase length to match expected length
+            expected_length = self.tl_state_lengths.get(junction_id, 4)
+            if len(new_phase) != expected_length:
+                if len(new_phase) < expected_length:
+                    # Extend by repeating the pattern
+                    new_phase = new_phase * (expected_length // len(new_phase) + 1)
+                    new_phase = new_phase[:expected_length]
+                else:
+                    # Truncate to expected length
+                    new_phase = new_phase[:expected_length]
+            
             return new_phase
 
+        # Adjust current phase length if needed
+        expected_length = self.tl_state_lengths.get(junction_id, 4)
+        if len(current) != expected_length:
+            if len(current) < expected_length:
+                # Extend by repeating the pattern
+                current = current * (expected_length // len(current) + 1)
+                current = current[:expected_length]
+            else:
+                # Truncate to expected length
+                current = current[:expected_length]
+        
         return current
 
     def get_average_response_time(self):
