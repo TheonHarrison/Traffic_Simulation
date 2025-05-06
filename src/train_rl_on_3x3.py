@@ -32,14 +32,15 @@ def train_worker(config_path, controller_type, episode, exploration_rate,
         sim.close()
         return None
     
-    # Create controller
+    # Create controller with improved parameters
     if controller_type == "Wired RL":
         controller = WiredRLController(
             tl_ids,
             learning_rate=learning_rate,
             discount_factor=discount_factor,
             exploration_rate=exploration_rate,
-            network_latency=0.01,  # Reduced latency for faster training
+            network_latency=0.005,  # Reduced from 0.01
+            state_bins=8,  # Increased from 5
             model_path=model_path
         )
     elif controller_type == "Wireless RL":
@@ -48,9 +49,10 @@ def train_worker(config_path, controller_type, episode, exploration_rate,
             learning_rate=learning_rate,
             discount_factor=discount_factor,
             exploration_rate=exploration_rate,
-            base_latency=0.005,  # Reduced latency for faster training
-            computation_factor=0.01,
-            packet_loss_prob=0.001,  # Minimal packet loss for faster training
+            base_latency=0.002,  # Reduced from 0.005
+            computation_factor=0.005,  # Reduced from 0.01
+            packet_loss_prob=0.0005,  # Reduced from 0.001
+            state_bins=8,  # Increased from 5
             model_path=model_path
         )
     else:
@@ -228,20 +230,20 @@ def collect_traffic_state(tl_ids):
     
     return traffic_state
 
-def train_rl_faster(controller_type, episodes=20, steps_per_episode=200, 
-                   learning_rate=0.2, discount_factor=0.9, exploration_rate=0.6,
-                   exploration_decay=0.9, parallel_episodes=4, model_path=None):
+def train_rl_faster(controller_type, episodes=40, steps_per_episode=400, 
+                   learning_rate=0.3, discount_factor=0.8, exploration_rate=0.9,
+                   exploration_decay=0.8, parallel_episodes=4, model_path=None):
     """
     Train an RL controller with optimized parameters for faster learning.
     
     Args:
         controller_type (str): Type of RL controller ('Wired RL' or 'Wireless RL')
-        episodes (int): Number of training episodes (reduced)
-        steps_per_episode (int): Number of steps per episode (reduced)
-        learning_rate (float): Learning rate for Q-learning (increased)
-        discount_factor (float): Discount factor for future rewards (reduced)
-        exploration_rate (float): Initial exploration rate (increased)
-        exploration_decay (float): Rate at which exploration decreases (faster decay)
+        episodes (int): Number of training episodes (increased to 40)
+        steps_per_episode (int): Number of steps per episode (increased to 400)
+        learning_rate (float): Learning rate for Q-learning (increased to 0.3)
+        discount_factor (float): Discount factor for future rewards (decreased to 0.8)
+        exploration_rate (float): Initial exploration rate (increased to 0.9)
+        exploration_decay (float): Rate at which exploration decreases (faster decay: 0.8)
         parallel_episodes (int): Number of episodes to run in parallel
         model_path (str): Path to a pre-trained model (optional)
     """
@@ -408,17 +410,17 @@ def main():
     parser.add_argument('--controller', type=str, default="Wired RL",
                     choices=["Wired RL", "Wireless RL"],
                     help='Type of RL controller to train')
-    parser.add_argument('--episodes', type=int, default=20,
+    parser.add_argument('--episodes', type=int, default=40,
                     help='Number of training episodes')
-    parser.add_argument('--steps', type=int, default=200,
+    parser.add_argument('--steps', type=int, default=400,
                     help='Number of steps per episode')
-    parser.add_argument('--lr', type=float, default=0.2,
+    parser.add_argument('--lr', type=float, default=0.3,
                     help='Learning rate')
-    parser.add_argument('--discount', type=float, default=0.9,
+    parser.add_argument('--discount', type=float, default=0.8,
                     help='Discount factor')
-    parser.add_argument('--exploration', type=float, default=0.6,
+    parser.add_argument('--exploration', type=float, default=0.9,
                     help='Initial exploration rate')
-    parser.add_argument('--decay', type=float, default=0.9,
+    parser.add_argument('--decay', type=float, default=0.8,
                     help='Exploration decay rate')
     parser.add_argument('--parallel', type=int, default=4,
                     help='Number of episodes to run in parallel')

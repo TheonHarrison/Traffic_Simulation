@@ -2,10 +2,10 @@
 import os
 from pathlib import Path
 
-# find new model
 def find_latest_model(controller_type, project_root=None):
     """
     Find the latest trained model for the specified controller type.
+    Prioritizes optimized_final models if they exist.
     
     Args:
         controller_type (str): Type of controller ("Wired RL" or "Wireless RL")
@@ -21,16 +21,45 @@ def find_latest_model(controller_type, project_root=None):
     # Convert controller type to filename format
     model_prefix = controller_type.replace(' ', '_').lower()
     
-    # Define the models directory
+    # Define the models directories
     models_dir = os.path.join(project_root, "data", "models")
+    optimized_dir = os.path.join(models_dir, "optimized")
     
+    # First, check for optimized_final model
+    optimized_final_path = os.path.join(optimized_dir, f"{model_prefix}_optimized_final.pkl")
+    if os.path.exists(optimized_final_path):
+        print(f"Found optimized final model for {controller_type}: {optimized_final_path}")
+        return optimized_final_path
+    
+    # If no optimized final model, check for any optimized models
+    import glob
+    import re
+    
+    optimized_pattern = os.path.join(optimized_dir, f"{model_prefix}_optimized_episode_*.pkl")
+    optimized_files = glob.glob(optimized_pattern)
+    
+    if optimized_files:
+        # Extract episode numbers
+        optimized_episodes = []
+        for model_file in optimized_files:
+            match = re.search(r'_episode_(\d+)\.pkl$', model_file)
+            if match:
+                optimized_episodes.append((int(match.group(1)), model_file))
+        
+        if optimized_episodes:
+            # Sort by episode number and get the latest
+            optimized_episodes.sort(key=lambda x: x[0], reverse=True)
+            latest_episode, latest_model = optimized_episodes[0]
+            print(f"Found latest optimized model for {controller_type}: Episode {latest_episode}")
+            print(f"Model path: {latest_model}")
+            return latest_model
+    
+    # If no optimized models, fall back to regular models
     if not os.path.exists(models_dir):
         print(f"Models directory not found: {models_dir}")
         return None
     
-    # Find all model files for this controller type
-    import glob
-    import re
+    # Find all regular model files for this controller type
     model_pattern = os.path.join(models_dir, f"{model_prefix}_episode_*.pkl")
     model_files = glob.glob(model_pattern)
     
@@ -53,7 +82,7 @@ def find_latest_model(controller_type, project_root=None):
     episode_numbers.sort(key=lambda x: x[0], reverse=True)
     latest_episode, latest_model = episode_numbers[0]
     
-    print(f"Found latest model for {controller_type}: Episode {latest_episode}")
+    print(f"Found latest regular model for {controller_type}: Episode {latest_episode}")
     print(f"Model path: {latest_model}")
     
     return latest_model

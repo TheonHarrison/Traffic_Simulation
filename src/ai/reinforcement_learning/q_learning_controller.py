@@ -20,7 +20,7 @@ class QLearningController(RLController):
     traffic signal timing policies based on traffic conditions.
     """
     def __init__(self, junction_ids, learning_rate=0.15, discount_factor=0.95, 
-                exploration_rate=0.5, state_bins=5, model_path=None):
+                exploration_rate=0.5, state_bins=8, model_path=None):
         """
         Initialize the Q-Learning controller.
         
@@ -104,10 +104,10 @@ class QLearningController(RLController):
         discretized_wait_time = min(self.state_bins-1, int(total_wait_time / (300.0 / self.state_bins)))
         
         # Discretize using more fine-grained bins
-        discretized_ns_count = min(self.state_bins-1, int(ns_count / 3))
-        discretized_ew_count = min(self.state_bins-1, int(ew_count / 3))
-        discretized_ns_queue = min(self.state_bins-1, int(ns_queue / 2))
-        discretized_ew_queue = min(self.state_bins-1, int(ew_queue / 2))
+        discretized_ns_count = min(self.state_bins-1, int(ns_count / 2))
+        discretized_ew_count = min(self.state_bins-1, int(ew_count / 2))
+        discretized_ns_queue = min(self.state_bins-1, int(ns_queue / 1.5))
+        discretized_ew_queue = min(self.state_bins-1, int(ew_queue / 1.5))
         
         # Add queue ratio for better differentiation of states
         if ew_queue + ns_queue > 0:
@@ -184,16 +184,17 @@ class QLearningController(RLController):
         
         # 2. Queue length penalty (more negative for longer queues)
         queue_penalty = -2.0 * (north_queue + south_queue + east_queue + west_queue)
-
+        
+        # Exponential penalty for long queues
         for queue_length in [north_queue, south_queue, east_queue, west_queue]:
             if queue_length > 3:  # If queue is getting long
-                queue_penalty -= (queue_length - 3) ** 2
+                queue_penalty -= (queue_length - 3) ** 2  # Exponential penalty
 
         # 3. Throughput reward (more positive for more vehicles moving)
         total_vehicles = north_count + south_count + east_count + west_count
         total_queues = north_queue + south_queue + east_queue + west_queue
         moving_vehicles = max(0, total_vehicles - total_queues)
-        throughput_reward = 0.3 * moving_vehicles
+        throughput_reward = 0.8 * moving_vehicles  # Increased from 0.3 to 0.8
         
         # 4. Balance reward (penalize imbalance between directions)
         ns_total = north_count + south_count
@@ -216,12 +217,12 @@ class QLearningController(RLController):
                                prev_traffic_state.get('west_queue', 0))
             
             queue_reduction = max(0, prev_total_queue - total_queues)
-            queue_reduction_reward = 0.4 * queue_reduction
+            queue_reduction_reward = 1.0 * queue_reduction  # Increased from 0.4 to 1.0
         else:
             queue_reduction_reward = 0
         
-        # Combine all reward components
-        total_reward = wait_penalty + queue_penalty + throughput_reward + balance_reward + queue_reduction_reward
+        # Combine all reward components with modified weights
+        total_reward = wait_penalty * 1.5 + queue_penalty + throughput_reward + balance_reward + queue_reduction_reward * 1.5
         
         return total_reward
     
