@@ -118,7 +118,7 @@ def train_worker(config_path, controller_type, episode, exploration_rate,
         "rewards": sum(episode_rewards) / len(episode_rewards) if episode_rewards else 0,
         "waiting_times": sum(episode_waiting_times) / len(episode_waiting_times) if episode_waiting_times else 0,
         "speeds": sum(episode_speeds) / len(episode_speeds) if episode_speeds else 0,
-        "throughput": sim.get_throughput(),
+        "throughput": traci.simulation.getArrivedNumber() if hasattr(traci.simulation, 'getArrivedNumber') else 0,
         "q_table_size": len(controller.q_tables.get(tl_ids[0], {})) if hasattr(controller, 'q_tables') else 0
     }
     
