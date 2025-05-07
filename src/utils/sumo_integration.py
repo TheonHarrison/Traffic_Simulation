@@ -8,10 +8,6 @@ class SumoSimulation:
     def __init__(self, config_path, gui=False):
         """
         Initialise the SUMO simulation.
-        
-        Args:
-            config_path (str): Path to the SUMO configuration file
-            gui (bool): Whether to use the SUMO GUI
         """
         self.config_path = config_path
         self.gui = gui

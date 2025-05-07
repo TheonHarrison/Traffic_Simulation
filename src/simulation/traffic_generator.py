@@ -11,9 +11,6 @@ class TrafficGenerator:
     def __init__(self, template_file=None):
         """
         Initialise the traffic generator.
-        
-        Args:
-            template_file: Path to template route file with vehicle types and routes defined
         """
         self.project_root = Path(__file__).resolve().parent.parent.parent
         
@@ -23,10 +20,10 @@ class TrafficGenerator:
         self.template_file = template_file
         self.output_dir = os.path.join(self.project_root, "config", "scenarios")
         
-        # Ensure output directory exists
+        # ensure output directory exists
         os.makedirs(self.output_dir, exist_ok=True)
         
-        # Load template if it exists
+        # load template if it exists
         self.template_tree = None
         if os.path.exists(template_file):
             self.template_tree = etree.parse(template_file)
@@ -45,19 +42,19 @@ class TrafficGenerator:
         if self.template_tree is None:
             raise ValueError("No template loaded. Cannot generate traffic scenario.")
         
-        # Create a copy of the template
+        # create a copy of the template
         tree = etree.ElementTree(self.template_tree.getroot())
         root = tree.getroot()
         
-        # Add flow definitions
+        # add flow definitions
         flow_id = 0
         for route_id, flow_rate in flows.items():
-            # Basic validation
+            # basic validation
             if flow_rate < 0:
                 print(f"Warning: Negative flow rate for {route_id}. Setting to 0.")
                 flow_rate = 0
             
-            # Add flow element
+            # add flow element
             flow_element = etree.SubElement(root, "flow")
             flow_element.set("id", f"flow_{flow_id}")
             flow_element.set("type", "car")  # Default to car, can be parameterized
@@ -68,11 +65,11 @@ class TrafficGenerator:
             
             flow_id += 1
         
-        # Add some random individual vehicles of different types
+        # add some random individual vehicles of different types
         self._add_random_vehicles(root, ["bus", "truck", "emergency"], 
                                 duration, math.ceil(sum(flows.values()) / 100))
         
-        # Save to file
+        # save to file
         output_path = os.path.join(self.output_dir, output_file)
         tree.write(output_path, pretty_print=True, xml_declaration=True, encoding="UTF-8")
         print(f"Generated constant traffic scenario: {output_path}")
@@ -95,14 +92,14 @@ class TrafficGenerator:
         if self.template_tree is None:
             raise ValueError("No template loaded. Cannot generate traffic scenario.")
         
-        # Create a copy of the template
+        # create a copy of the template
         tree = etree.ElementTree(self.template_tree.getroot())
         root = tree.getroot()
         
-        # Add flow definitions for each time period
+        # add flow definitions for each time period
         flow_id = 0
         
-        # Pre-peak period
+        # pre-peak period
         if peak_start > 0:
             for route_id, flow_rate in base_flows.items():
                 flow_element = etree.SubElement(root, "flow")
@@ -114,7 +111,7 @@ class TrafficGenerator:
                 flow_element.set("vehsPerHour", str(flow_rate))
                 flow_id += 1
         
-        # Peak period
+        # peak period
         for route_id, flow_rate in peak_flows.items():
             flow_element = etree.SubElement(root, "flow")
             flow_element.set("id", f"flow_peak_{flow_id}")
@@ -125,7 +122,7 @@ class TrafficGenerator:
             flow_element.set("vehsPerHour", str(flow_rate))
             flow_id += 1
         
-        # Post-peak period
+        # post-peak period
         if peak_end < duration:
             for route_id, flow_rate in base_flows.items():
                 flow_element = etree.SubElement(root, "flow")
@@ -137,7 +134,7 @@ class TrafficGenerator:
                 flow_element.set("vehsPerHour", str(flow_rate))
                 flow_id += 1
         
-        # Add some random individual vehicles of different types
+        # add some random individual vehicles of different types
         max_flow = max(max(base_flows.values()), max(peak_flows.values()))
         self._add_random_vehicles(root, ["bus", "truck", "emergency"], 
                                 duration, math.ceil(max_flow / 50))
@@ -154,7 +151,6 @@ class TrafficGenerator:
         """
         Generate a scenario with emergency vehicles that require priority routing.
         
-        Args:
             output_file: Name of output file
             base_flows: Dictionary mapping route IDs to flow rates
             emergency_start: When emergency vehicles start to appear (seconds)
@@ -164,11 +160,11 @@ class TrafficGenerator:
         if self.template_tree is None:
             raise ValueError("No template loaded. Cannot generate traffic scenario.")
         
-        # Create a copy of the template
+        # create a copy of the template
         tree = etree.ElementTree(self.template_tree.getroot())
         root = tree.getroot()
         
-        # Add base traffic flows
+        # add base traffic flows
         flow_id = 0
         for route_id, flow_rate in base_flows.items():
             flow_element = etree.SubElement(root, "flow")
@@ -190,7 +186,7 @@ class TrafficGenerator:
             vehicle_element.set("depart", str(time))
             vehicle_element.set("departSpeed", "max")
         
-        # Save to file
+        # save to file
         output_path = os.path.join(self.output_dir, output_file)
         tree.write(output_path, pretty_print=True, xml_declaration=True, encoding="UTF-8")
         print(f"Generated emergency scenario: {output_path}")
@@ -202,24 +198,15 @@ class TrafficGenerator:
                                     duration=3600):
         """
         Generate a scenario with sudden congestion on a specific route.
-        
-        Args:
-            output_file: Name of output file
-            base_flows: Dictionary mapping route IDs to base flow rates
-            congestion_route: Route ID where congestion occurs
-            congestion_start: When congestion starts (seconds)
-            congestion_end: When congestion ends (seconds)
-            congestion_flow: High flow rate during congestion (vehicles/hour)
-            duration: Duration of the scenario in seconds
         """
         if self.template_tree is None:
             raise ValueError("No template loaded. Cannot generate traffic scenario.")
         
-        # Create a copy of the template
+        # create a copy of the template
         tree = etree.ElementTree(self.template_tree.getroot())
         root = tree.getroot()
         
-        # Add base traffic flows for all routes
+        # add base traffic flows for all routes
         flow_id = 0
         for route_id, flow_rate in base_flows.items():
             if route_id != congestion_route:
@@ -233,8 +220,8 @@ class TrafficGenerator:
                 flow_element.set("vehsPerHour", str(flow_rate))
                 flow_id += 1
         
-        # Add flows for the congestion route (before, during, after)
-        # Before congestion
+        # add flows for the congestion route (before, during, after)
+        # before congestion
         if congestion_start > 0:
             flow_element = etree.SubElement(root, "flow")
             flow_element.set("id", f"flow_before_congestion")
@@ -244,7 +231,7 @@ class TrafficGenerator:
             flow_element.set("end", str(congestion_start))
             flow_element.set("vehsPerHour", str(base_flows.get(congestion_route, 300)))
         
-        # During congestion
+        # during congestion
         flow_element = etree.SubElement(root, "flow")
         flow_element.set("id", f"flow_during_congestion")
         flow_element.set("type", "car")
@@ -253,7 +240,7 @@ class TrafficGenerator:
         flow_element.set("end", str(congestion_end))
         flow_element.set("vehsPerHour", str(congestion_flow))
         
-        # After congestion
+        # after congestion
         if congestion_end < duration:
             flow_element = etree.SubElement(root, "flow")
             flow_element.set("id", f"flow_after_congestion")
@@ -273,12 +260,6 @@ class TrafficGenerator:
     def _add_random_vehicles(self, root, vehicle_types, duration, count):
         """
         Add random individual vehicles of specific types.
-        
-        Args:
-            root: XML root element
-            vehicle_types: List of vehicle types to add
-            duration: Duration of the scenario
-            count: Number of vehicles to add
         """
         # Get all route IDs
         route_ids = []
@@ -288,7 +269,7 @@ class TrafficGenerator:
         if not route_ids:
             return
         
-        # Add random vehicles
+        # add random vehicles
         for i in range(count):
             vehicle_type = random.choice(vehicle_types)
             route_id = random.choice(route_ids)

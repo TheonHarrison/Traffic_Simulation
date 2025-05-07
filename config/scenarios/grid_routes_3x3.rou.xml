@@ -1,34 +1,34 @@
 <routes>
     <vType id="car" accel="0.8" decel="4.5" sigma="0.5" length="5" minGap="2.5" maxSpeed="16.67" guiShape="passenger"/>
     
-    <!-- Create routes for the 3x3 grid -->
-    <!-- Horizontal routes (West to East) -->
+    <!-- creating routes for the grid -->
+    <!-- horizontal routes (west to east) -->
     <route id="route_WE_0" edges="A0B0 B0C0"/>
     <route id="route_WE_1" edges="A1B1 B1C1"/>
     <route id="route_WE_2" edges="A2B2 B2C2"/>
     
-    <!-- Horizontal routes (East to West) -->
+    <!-- horizontal routes (east to west) -->
     <route id="route_EW_0" edges="C0B0 B0A0"/>
     <route id="route_EW_1" edges="C1B1 B1A1"/>
     <route id="route_EW_2" edges="C2B2 B2A2"/>
     
-    <!-- Vertical routes (South to North) -->
+    <!-- vertical routes (south to north) -->
     <route id="route_SN_0" edges="A0A1 A1A2"/>
     <route id="route_SN_1" edges="B0B1 B1B2"/>
     <route id="route_SN_2" edges="C0C1 C1C2"/>
     
-    <!-- Vertical routes (North to South) -->
+    <!-- vertical routes (north to south) -->
     <route id="route_NS_0" edges="A2A1 A1A0"/>
     <route id="route_NS_1" edges="B2B1 B1B0"/>
     <route id="route_NS_2" edges="C2C1 C1C0"/>
     
-    <!-- Multi-turn routes (instead of diagonals) -->
+    <!-- paths for cars to turn multiple times -->
     <route id="route_NW_SE" edges="A2A1 A1B1 B1C1 C1C0"/>
     <route id="route_NE_SW" edges="C2C1 C1B1 B1A1 A1A0"/>
     <route id="route_SW_NE" edges="A0A1 A1B1 B1C1 C1C2"/>
     <route id="route_SE_NW" edges="C0C1 C1B1 B1A1 A1A2"/>
     
-    <!-- Add flows for continuous vehicle insertion -->
+    <!-- adds regular car traffic to the simulation -->
     <flow id="flow_WE_0" type="car" route="route_WE_0" begin="0" end="1000" vehsPerHour="300"/>
     <flow id="flow_WE_1" type="car" route="route_WE_1" begin="0" end="1000" vehsPerHour="300"/>
     <flow id="flow_WE_2" type="car" route="route_WE_2" begin="0" end="1000" vehsPerHour="300"/>

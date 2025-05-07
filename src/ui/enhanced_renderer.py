@@ -1,4 +1,3 @@
-# src/ui/enhanced_renderer.py
 import pygame
 import math
 from enum import Enum
@@ -15,11 +14,11 @@ DARK_GRAY = (100, 100, 100)
 
 class EnhancedTrafficRenderer:
     """
-    Enhanced renderer for traffic elements with improved graphics.
+    enhanced renderer for traffic elements with improved graphics.
     """
     def __init__(self, screen, mapper, offset_x=0, offset_y=0, zoom=1.0):
         """
-        Initialise the enhanced traffic renderer.
+        initialise the enhanced traffic renderer.
         
         Args:
             screen: Pygame screen to draw on
@@ -38,7 +37,7 @@ class EnhancedTrafficRenderer:
         self.font = pygame.font.SysFont("Arial", 10)
         self.id_font = pygame.font.SysFont("Arial", 8)
         
-        # Set default colours
+        # Set colours
         self.colours = {
             "car": (0, 100, 200),      # Blue
             "bus": (0, 150, 0),        # Green
@@ -53,10 +52,10 @@ class EnhancedTrafficRenderer:
             "junction": (100, 100, 100)  # Gray
         }
         
-        # Create glow surfaces for traffic lights
+        # create glow surfaces for traffic lights
         self.glow_surfaces = self._create_glow_surfaces()
         
-        # Debug options
+        # debug options
         self.show_vehicle_ids = True
         self.show_speeds = True
         self.show_waiting_times = True
@@ -70,22 +69,22 @@ class EnhancedTrafficRenderer:
         for color_name in ["red_light", "yellow_light", "green_light"]:
             base_color = self.colours[color_name]
             
-            # Create surfaces of different sizes for the glow effect
+            # create surfaces of different sizes for the glow effect
             for size in [12, 16, 20, 24]:
-                # Create a surface with alpha channel
+                # create a surface with alpha channel
                 surface = pygame.Surface((size, size), pygame.SRCALPHA)
                 
-                # Calculate center and radius
+                # calculate center and radius
                 center = (size // 2, size // 2)
                 max_radius = size // 2
                 
-                # Draw concentric circles with decreasing alpha
+                # draw concentric circles with decreasing alpha
                 for radius in range(max_radius, 0, -1):
                     alpha = 150 * (radius / max_radius) ** 2  # Non-linear falloff
                     glow_color = (*base_color, int(alpha))
                     pygame.draw.circle(surface, glow_color, center, radius)
                 
-                # Store in dictionary
+                # store in dictionary
                 glow_surfaces[(color_name, size)] = surface
         
         return glow_surfaces
@@ -121,11 +120,11 @@ class EnhancedTrafficRenderer:
                 pygame_y * self.zoom + self.offset_y)
     
     def render_vehicle(self, vehicle_id, position, angle, vehicle_type, 
-                      speed=None, waiting_time=None, label=None):
+                       speed=None, waiting_time=None, label=None):
         """
         Render a vehicle with improved graphics.
         
-        Args:
+        Args :
             vehicle_id: ID of the vehicle
             position: (x, y) position in SUMO coordinates
             angle: Heading angle in degrees (0 = East, 90 = North)
@@ -134,16 +133,16 @@ class EnhancedTrafficRenderer:
             waiting_time: Time spent waiting in seconds (optional)
             label: Text label to display (optional)
         """
-        # Transform coordinates
+        # transform coordinates
         screen_x, screen_y = self._transform_coordinates(position[0], position[1])
         
-        # Convert angle to pygame angle (SUMO: 0 = east, 90 = north, Pygame rotation: clockwise)
+        # convert angle to pygame angle (SUMO: 0 = east, 90 = north, Pygame rotation: clockwise)
         pygame_angle = -angle + 90
         
-        # Determine if the vehicle is waiting
+        # determine if the vehicle is waiting
         is_waiting = waiting_time is not None and waiting_time > 0
         
-        # Determine vehicle size based on type
+        # determine vehicle size based on type
         if vehicle_type == 'emergency':
             base_width, base_height = 12, 6
         elif vehicle_type == 'truck':
@@ -153,32 +152,32 @@ class EnhancedTrafficRenderer:
         else:  # car or default
             base_width, base_height = 10, 5
         
-        # Scale by zoom factor
+        # scale by zoom factor
         width = base_width * self.zoom
         height = base_height * self.zoom
         
-        # Create a vehicle surface
+        # create a vehicle surface
         vehicle_surface = pygame.Surface((width, height), pygame.SRCALPHA)
         
-        # Determine color based on vehicle type
+        # determine color based on vehicle type
         color = self.colours.get(vehicle_type, self.colours["car"])
         
         # If waiting, make it pulsate red
         if is_waiting:
-            # Blend color with red based on waiting time
+            # blend color with red based on waiting time
             wait_factor = min(1.0, waiting_time / 60.0)
             
-            # Pulsate effect for longer waiting times
+            # pulsate effect for longer waiting times
             if waiting_time > 10.0:
                 pulse = 0.7 + 0.3 * math.sin(pygame.time.get_ticks() * 0.01)
                 wait_factor *= pulse
             
             color = tuple(int(c * (1 - wait_factor) + 255 * wait_factor * (i == 0)) for i, c in enumerate(color))
         
-        # Fill the vehicle surface
+        # fill the vehicle surface
         vehicle_surface.fill(color)
         
-        # Draw a direction indicator (arrow)
+        # draw a direction indicator (arrow)
         arrow_points = [
             (width * 0.8, height // 2),  # Tip of arrow
             (width * 0.5, height * 0.2),  # Left corner
@@ -186,14 +185,14 @@ class EnhancedTrafficRenderer:
         ]
         pygame.draw.polygon(vehicle_surface, BLACK, arrow_points)
         
-        # Rotate and position
+        # rotate and position
         rotated_surface = pygame.transform.rotate(vehicle_surface, pygame_angle)
         rotated_rect = rotated_surface.get_rect(center=(screen_x, screen_y))
         
-        # Draw the vehicle
+        # draw the vehicle
         self.screen.blit(rotated_surface, rotated_rect.topleft)
         
-        # Draw vehicle ID if enabled
+        # draw vehicle ID if enabled
         label_y_offset = height / 2 + 5
         if self.show_vehicle_ids:
             id_text = self.id_font.render(vehicle_id, True, WHITE, (0, 0, 0, 180))
@@ -201,14 +200,14 @@ class EnhancedTrafficRenderer:
             self.screen.blit(id_text, id_rect.topleft)
             label_y_offset += id_rect.height + 2
         
-        # Draw speed if enabled
+        # draw speed if enabled
         if self.show_speeds and speed is not None:
             speed_text = self.id_font.render(f"{speed:.1f} m/s", True, WHITE, (0, 0, 100, 180))
             speed_rect = speed_text.get_rect(center=(screen_x, screen_y + label_y_offset))
             self.screen.blit(speed_text, speed_rect.topleft)
             label_y_offset += speed_rect.height + 2
         
-        # Draw waiting time if enabled and vehicle is waiting
+        # draw waiting time if enabled and vehicle is waiting
         if self.show_waiting_times and is_waiting:
             wait_text = self.id_font.render(f"Wait: {waiting_time:.1f}s", True, WHITE, (150, 0, 0, 180))
             wait_rect = wait_text.get_rect(center=(screen_x, screen_y + label_y_offset))
@@ -218,21 +217,21 @@ class EnhancedTrafficRenderer:
         """
         Render a traffic light with the given state.
         
-        Args:
+        Args =
             tl_id: ID of the traffic light
             position: (x, y) position in SUMO coordinates
             state: Traffic light state string (e.g., 'GrYy')
         """
-        # Transform coordinates
+        # transform coordinates
         screen_x, screen_y = self._transform_coordinates(position[0], position[1])
         
-        # Calculate sizes based on zoom
+        # calculate sizes based on zoom
         housing_width = 30 * self.zoom
         housing_height = (len(state) * 20 + 10) * self.zoom
         light_radius = 6 * self.zoom
         light_spacing = 20 * self.zoom
         
-        # Draw the traffic light housing
+        # draw the traffic light housing
         housing_rect = pygame.Rect(
             screen_x - housing_width / 2,
             screen_y - housing_height / 2,
@@ -240,17 +239,17 @@ class EnhancedTrafficRenderer:
             housing_height
         )
         
-        # Draw the outer housing with a slight bevel
+        # draw the outer housing with a slight bevel
         pygame.draw.rect(self.screen, (30, 30, 30), housing_rect, border_radius=int(5 * self.zoom))
         pygame.draw.rect(self.screen, self.colours["traffic_light_housing"], 
                         housing_rect.inflate(-4, -4), border_radius=int(3 * self.zoom))
         
-        # Draw the ID on top of the traffic light
+        # draw the ID on top of the traffic light
         id_text = self.font.render(tl_id, True, WHITE)
         id_rect = id_text.get_rect(center=(screen_x, screen_y - housing_height / 2 - 10 * self.zoom))
         self.screen.blit(id_text, id_rect.topleft)
         
-        # Draw each light
+        # draw each light
         for i, light in enumerate(state):
             # Calculate position
             light_y = screen_y - housing_height / 2 + (i + 0.5) * light_spacing + 5 * self.zoom
@@ -269,7 +268,7 @@ class EnhancedTrafficRenderer:
                 color = (80, 80, 80)
                 glow_color = None
             
-            # Draw glow effect first if it's on
+            # draw glow effect first if it's on
             if glow_color:
                 # Get appropriate sized glow surface
                 glow_size = int(24 * self.zoom)
@@ -283,9 +282,9 @@ class EnhancedTrafficRenderer:
             
             # Draw the light circle with a black outline for better visibility
             pygame.draw.circle(self.screen, BLACK, (int(screen_x), int(light_y)), 
-                              int(light_radius + 1))
+                               int(light_radius + 1))
             pygame.draw.circle(self.screen, color, (int(screen_x), int(light_y)), 
-                              int(light_radius))
+                               int(light_radius))
             
             # Add a small reflection highlight
             highlight_pos = (int(screen_x - light_radius/3), int(light_y - light_radius/3))

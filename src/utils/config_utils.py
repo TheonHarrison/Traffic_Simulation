@@ -1,4 +1,3 @@
-# src/utils/config_utils.py
 import os
 from pathlib import Path
 
@@ -6,13 +5,6 @@ def find_latest_model(controller_type, project_root=None):
     """
     Find the latest trained model for the specified controller type.
     Prioritizes optimised_final models if they exist.
-    
-    Args:
-        controller_type (str): Type of controller ("Wired RL" or "Wireless RL")
-        project_root: Project root directory (optional)
-    
-    Returns:
-        str or None: Path to the latest model file, or None if no model is found
     """
     # Determine project root if not provided
     if project_root is None:
@@ -90,14 +82,6 @@ def find_latest_model(controller_type, project_root=None):
 def create_temp_config(route_file, network_file=None, project_root=None):
     """
     Create a temporary SUMO configuration file.
-    
-    Args:
-        route_file: Path to the route file
-        network_file: Path to the network file (optional)
-        project_root: Project root directory (optional)
-        
-    Returns:
-        Path to the created config file
     """
     # Determine project root if not provided
     if project_root is None:
@@ -115,23 +99,23 @@ def create_temp_config(route_file, network_file=None, project_root=None):
     # Write the config file
     with open(config_path, 'w') as f:
         f.write(f"""<?xml version="1.0" encoding="UTF-8"?>
-<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
-    <input>
-        <net-file value="{network_file}"/>
-        <route-files value="{route_file}"/>
-    </input>
-    <time>
-        <begin value="0"/>
-        <end value="3600"/>
-        <step-length value="1.0"/>
-    </time>
-    <processing>
-        <time-to-teleport value="-1"/>
-    </processing>
-    <report>
-        <verbose value="false"/>
-        <no-step-log value="true"/>
-    </report>
-</configuration>""")
+                    <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
+                        <input>
+                            <net-file value="{network_file}"/>
+                            <route-files value="{route_file}"/>
+                        </input>
+                        <time>
+                            <begin value="0"/>
+                            <end value="3600"/>
+                            <step-length value="1.0"/>
+                        </time>
+                        <processing>
+                            <time-to-teleport value="-1"/>
+                        </processing>
+                        <report>
+                            <verbose value="false"/>
+                            <no-step-log value="true"/>
+                        </report>
+                    </configuration>""")
     
     return config_path

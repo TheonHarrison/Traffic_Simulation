@@ -9,13 +9,10 @@ class SumoNetworkParser:
     def __init__(self, net_file_path):
         """
         Initialise the parser with a SUMO .net.xml file path.
-        
-        Args:
-            net_file_path (str): Path to the SUMO network XML file
         """
         self.net_file_path = Path(net_file_path)
-        self.nodes = {}  # id -> (x, y)
-        self.edges = {}  # id -> {"from": node_id, "to": node_id, "shape": [(x1, y1), (x2, y2), ...]}
+        self.nodes = {}  # id = (x, y)
+        self.edges = {}  # id = {"from": node_id, "to": node_id, "shape": [(x1, y1), (x2, y2), etc]}
         self.connections = []  # list of (from_edge, to_edge, from_lane, to_lane)
         
         # Parse the network file
@@ -96,12 +93,6 @@ class SumoPygameMapper:
     def __init__(self, net_parser, screen_width, screen_height, margin=50):
         """
         Initialise the coordinate mapper.
-        
-        Args:
-            net_parser (SumoNetworkParser): Parsed SUMO network
-            screen_width (int): Width of the Pygame screen
-            screen_height (int): Height of the Pygame screen
-            margin (int): Margin around the network in pixels
         """
         self.net_parser = net_parser
         self.screen_width = screen_width
@@ -170,13 +161,6 @@ class SumoPygameMapper:
     def sumo_to_pygame(self, sumo_x, sumo_y):
         """
         Convert SUMO coordinates to Pygame screen coordinates.
-        
-        Args:
-            sumo_x (float): X coordinate in SUMO
-            sumo_y (float): Y coordinate in SUMO
-            
-        Returns:
-            tuple: (pygame_x, pygame_y) coordinates
         """
         # Scale and translate
         pygame_x = self.offset_x + (sumo_x - self.min_x) * self.scale
@@ -188,12 +172,6 @@ class SumoPygameMapper:
     def get_node_position(self, node_id):
         """
         Get the Pygame screen position of a SUMO node.
-        
-        Args:
-            node_id (str): ID of the SUMO node
-            
-        Returns:
-            tuple or None: (pygame_x, pygame_y) if node exists, None otherwise
         """
         if node_id in self.net_parser.nodes:
             sumo_x, sumo_y = self.net_parser.nodes[node_id]
@@ -203,43 +181,37 @@ class SumoPygameMapper:
     def get_edge_shape(self, edge_id):
         """
         Get the Pygame screen coordinates for an edge's shape.
-        
-        Args:
-            edge_id (str): ID of the SUMO edge
-            
-        Returns:
-            list or None: List of (pygame_x, pygame_y) points if edge exists, None otherwise
         """
         if edge_id in self.net_parser.edges:
             shape = self.net_parser.edges[edge_id]["shape"]
             return [self.sumo_to_pygame(x, y) for x, y in shape]
         return None
 
-# Test the mapper
+# test the mapper
 if __name__ == "__main__":
     import os
     import sys
     from pathlib import Path
     
-    # Add project root to Python path
+    # add project root to Python path
     project_root = Path(__file__).resolve().parent.parent.parent
     sys.path.append(str(project_root))
     
-    # Path to the SUMO network file
+    # path to the SUMO network file
     net_file_path = os.path.join(project_root, "config", "maps", "grid_network.net.xml")
     
-    # Parse the network
+    # parse the network
     parser = SumoNetworkParser(net_file_path)
     
-    # Create a mapper
+    # create a mapper
     mapper = SumoPygameMapper(parser, 800, 600)
     
-    # Print some mapped coordinates
+    # print some mapped coordinates
     for node_id, (x, y) in list(parser.nodes.items())[:5]:
         pygame_x, pygame_y = mapper.sumo_to_pygame(x, y)
         print(f"Node {node_id}: SUMO ({x}, {y}) -> Pygame ({pygame_x}, {pygame_y})")
     
-    # Print some edge shapes
+    # print some edge shapes
     for edge_id, edge_data in list(parser.edges.items())[:2]:
         print(f"Edge {edge_id} shape:")
         for i, (x, y) in enumerate(edge_data["shape"]):

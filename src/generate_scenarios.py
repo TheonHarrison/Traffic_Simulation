@@ -37,7 +37,7 @@ def main():
     print("Initializing TrafficGenerator...")
     generator = TrafficGenerator(template_file_path)
     
-    # 1. Light Traffic Scenario
+    #  Light Traffic Scenario
     print("Generating light traffic scenario...")
     light_flows = {
         "route_north_south": 300,
@@ -49,7 +49,7 @@ def main():
     }
     generator.generate_constant_traffic("light_traffic.rou.xml", light_flows)
     
-    # 2. Moderate Traffic Scenario
+    #  Moderate Traffic Scenario
     print("Generating moderate traffic scenario...")
     moderate_flows = {
         "route_north_south": 600,
@@ -61,7 +61,7 @@ def main():
     }
     generator.generate_constant_traffic("moderate_traffic.rou.xml", moderate_flows)
     
-    # Continue with other scenarios...
+    # Continue with other scenarios
     print("Generating heavy traffic scenario...")
     heavy_flows = {
         "route_north_south": 1200,
@@ -91,12 +91,12 @@ def main():
         "route_counterclockwise": 300
     }
     generator.generate_variable_traffic("peak_hour_morning.rou.xml", 
-                                       base_flows, peak_flows, 
-                                       peak_start=600, peak_end=1800)
+                                        base_flows, peak_flows, 
+                                        peak_start=600, peak_end=1800)
     
     print("All scenarios generated successfully!")
     print(f"Scenario files should be in: {os.path.join(project_root, 'config', 'scenarios')}")
-    # List the files in the directory to confirm
+    # list the files in the directory to confirm
     scenario_dir = os.path.join(project_root, "config", "scenarios")
     print(f"Files in {scenario_dir}:")
     for file in os.listdir(scenario_dir):
@@ -105,23 +105,23 @@ def main():
 def create_template_file(filepath):
     """Create the template route file."""
     template_content = """<?xml version="1.0" encoding="UTF-8"?>
-<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
-    <!-- Vehicle type definitions -->
-    <vType id="car" accel="2.9" decel="7.5" sigma="0.5" length="5" minGap="2.5" maxSpeed="16.67" guiShape="passenger"/>
-    <vType id="bus" accel="1.2" decel="5.0" sigma="0.5" length="12" minGap="3.0" maxSpeed="12.5" guiShape="bus"/>
-    <vType id="truck" accel="1.0" decel="5.0" sigma="0.5" length="15" minGap="3.0" maxSpeed="13.89" guiShape="truck"/>
-    <vType id="emergency" accel="3.5" decel="9.0" sigma="0.5" length="5" minGap="2.5" maxSpeed="22.22" guiShape="emergency" vClass="emergency"/>
-    
-    <!-- Route definitions using the grid network -->
-    <route id="route_north_south" edges="A1A0 A0B0"/>
-    <route id="route_south_north" edges="B0A0 A0A1"/>
-    <route id="route_east_west" edges="B1B0 B0A0"/>
-    <route id="route_west_east" edges="A0B0 B0B1"/>
-    <route id="route_clockwise" edges="A0A1 A1B1 B1B0 B0A0"/>
-    <route id="route_counterclockwise" edges="A0B0 B0B1 B1A1 A1A0"/>
-    
-    <!-- Flow definitions will be added by specific scenarios -->
-</routes>"""
+                            <routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+                                <!-- Vehicle type definitions -->
+                                <vType id="car" accel="2.9" decel="7.5" sigma="0.5" length="5" minGap="2.5" maxSpeed="16.67" guiShape="passenger"/>
+                                <vType id="bus" accel="1.2" decel="5.0" sigma="0.5" length="12" minGap="3.0" maxSpeed="12.5" guiShape="bus"/>
+                                <vType id="truck" accel="1.0" decel="5.0" sigma="0.5" length="15" minGap="3.0" maxSpeed="13.89" guiShape="truck"/>
+                                <vType id="emergency" accel="3.5" decel="9.0" sigma="0.5" length="5" minGap="2.5" maxSpeed="22.22" guiShape="emergency" vClass="emergency"/>
+                                
+                                <!-- Route definitions using the grid network -->
+                                <route id="route_north_south" edges="A1A0 A0B0"/>
+                                <route id="route_south_north" edges="B0A0 A0A1"/>
+                                <route id="route_east_west" edges="B1B0 B0A0"/>
+                                <route id="route_west_east" edges="A0B0 B0B1"/>
+                                <route id="route_clockwise" edges="A0A1 A1B1 B1B0 B0A0"/>
+                                <route id="route_counterclockwise" edges="A0B0 B0B1 B1A1 A1A0"/>
+                                
+                                <!-- Flow definitions will be added by specific scenarios -->
+                            </routes>"""
     
     with open(filepath, 'w') as f:
         f.write(template_content)

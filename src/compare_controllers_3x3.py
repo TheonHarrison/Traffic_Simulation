@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 from datetime import datetime
 
-# Add the project root to the Python path
+# add the project root to the Python path
 project_root = Path(__file__).resolve().parent.parent
 sys.path.append(str(project_root))
 
@@ -25,11 +25,8 @@ def run_comparison(controller_types, steps=1000, runs=3):
         controller_types: List of controller types to compare
         steps: Number of simulation steps per run
         runs: Number of runs per controller for statistical significance
-    
-    Returns:
-        Dictionary of comparison results
     """
-    # Path to the 3x3 grid configuration
+    # path to the 3x3 grid configuration
     config_path = os.path.join(project_root, "config", "maps", "grid_network_3x3.sumocfg")
     
     if not os.path.exists(config_path):
@@ -249,13 +246,13 @@ def run_comparison(controller_types, steps=1000, runs=3):
                 # Close the simulation
                 sim.close()
         
-        # Calculate averages across runs
+        # calculate averages across runs
         for metric in ["waiting_times", "speeds", "throughputs", "response_times", "decision_times"]:
             values = results[controller_type][metric]
             if values:
                 results[controller_type][f"avg_{metric[:-1]}"] = sum(values) / len(values)
         
-        # Print controller summary
+        # print controller summary
         print(f"\n{controller_type} Summary:")
         print(f"  Avg waiting time: {results[controller_type]['avg_waiting_time']:.2f}s")
         print(f"  Avg speed: {results[controller_type]['avg_speed']:.2f}m/s")
@@ -270,9 +267,6 @@ def run_comparison(controller_types, steps=1000, runs=3):
 def visualise_comparison(results):
     """
     Create visualisation of comparison results.
-    
-    Args:
-        results: Dictionary of comparison results
     """
     # Create output directory
     output_dir = os.path.join(project_root, "data", "outputs", "3x3_comparison")

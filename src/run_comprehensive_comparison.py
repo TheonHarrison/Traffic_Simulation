@@ -1,4 +1,3 @@
-# src/run_comprehensive_comparison.py
 import os
 import sys
 import argparse

@@ -1,10 +1,9 @@
-# src/run_3x3_simulation.py
 import os
 import sys
 import argparse
 from pathlib import Path
 
-# Add the project root to the Python path
+# add the project root to the Python path
 project_root = Path(__file__).resolve().parent.parent
 sys.path.append(str(project_root))
 
@@ -22,6 +21,7 @@ def run_simulation(controller_type, steps=1000, gui=False, delay=0):
         steps: Number of simulation steps to run
         gui: Whether to use the SUMO GUI
         delay: Delay between steps in milliseconds
+        
     """
     # Set up configuration paths
     config_path = os.path.join(project_root, "config", "maps", "grid_network_3x3.sumocfg")
@@ -204,7 +204,7 @@ def run_simulation(controller_type, steps=1000, gui=False, delay=0):
                 print(f"Step {step}/{steps} - Vehicles: {len(vehicles)}, "
                       f"Avg Speed: {avg_speed:.2f} m/s, Avg Wait: {avg_wait:.2f} s")
         
-        # Calculate final metrics
+        # calculate final metrics
         vehicles = traci.vehicle.getIDList()
         avg_speed = 0
         avg_wait = 0
@@ -220,7 +220,7 @@ def run_simulation(controller_type, steps=1000, gui=False, delay=0):
         print(f"  Average Speed: {avg_speed:.2f} m/s")
         print(f"  Average Wait Time: {avg_wait:.2f} s")
         
-        # If using an RL controller, print training stats
+        # if using an RL controller, print training stats
         if "RL" in controller_type and hasattr(controller, 'get_q_table_stats'):
             q_stats = controller.get_q_table_stats()
             print("\nRL Controller Stats:")
@@ -235,14 +235,14 @@ def main():
     """Run the 3x3 grid simulation with a specified controller."""
     parser = argparse.ArgumentParser(description='Run 3x3 grid traffic simulation')
     parser.add_argument('--controller', type=str, default="Traditional",
-                       choices=["Traditional", "Wired AI", "Wireless AI", "Wired RL", "Wireless RL"],
-                       help='Type of controller to use')
+                        choices=["Traditional", "Wired AI", "Wireless AI", "Wired RL", "Wireless RL"],
+                        help='Type of controller to use')
     parser.add_argument('--steps', type=int, default=1000,
-                       help='Number of simulation steps')
+                        help='Number of simulation steps')
     parser.add_argument('--gui', action='store_true',
-                       help='Use SUMO GUI')
+                        help='Use SUMO GUI')
     parser.add_argument('--delay', type=int, default=0,
-                       help='Delay between steps in milliseconds')
+                        help='Delay between steps in milliseconds')
     args = parser.parse_args()
     
     print(f"Running 3x3 grid simulation with {args.controller} controller")

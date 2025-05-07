@@ -148,12 +148,7 @@ def collect_traffic_state(tl_ids):
 def get_highest_episode_number(controller_type):
     """
     Find the highest episode number for the specified controller type.
-    
-    Args:
-        controller_type (str): Type of controller ("Wired RL" or "Wireless RL")
-        
-    Returns:
-        int: Highest episode number found, or 0 if no models exist
+
     """
     # Convert controller type to filename format
     model_prefix = controller_type.replace(' ', '_').lower()
@@ -165,7 +160,7 @@ def get_highest_episode_number(controller_type):
         print(f"Models directory not found: {models_dir}")
         return 0
     
-    # Find all model files for this controller type
+    # find all model files for this controller type
     model_pattern = os.path.join(models_dir, f"{model_prefix}_episode_*.pkl")
     model_files = glob.glob(model_pattern)
     
@@ -173,7 +168,7 @@ def get_highest_episode_number(controller_type):
         print(f"No existing models found for {controller_type}")
         return 0
     
-    # Extract episode numbers and find the highest one
+    # extract episode numbers and find the highest one
     episode_numbers = []
     for model_file in model_files:
         match = re.search(r'_episode_(\d+)\.pkl$', model_file)
@@ -190,7 +185,7 @@ def get_highest_episode_number(controller_type):
     return highest_episode
 
 def train_episode(config_path, controller_type, episode_num, exploration_rate, 
-                 steps_per_episode, learning_rate, discount_factor, model_path=None):
+                  steps_per_episode, learning_rate, discount_factor, model_path=None):
     """Train a single episode"""
     # Initialise simulation
     sim = SumoSimulation(config_path, gui=False)
@@ -204,7 +199,7 @@ def train_episode(config_path, controller_type, episode_num, exploration_rate,
         sim.close()
         return None, None
     
-    # Create controller with improved parameters
+    # create controller with improved parameters
     if controller_type == "Wired RL":
         controller = WiredRLController(
             tl_ids,
@@ -232,23 +227,23 @@ def train_episode(config_path, controller_type, episode_num, exploration_rate,
         sim.close()
         return None, None
     
-    # Episode statistics
+    # episode statistics
     episode_rewards = []
     episode_waiting_times = []
     episode_speeds = []
     
     # Run the episode
     for step in range(steps_per_episode):
-        # Collect traffic state
+        # collect traffic state
         traffic_state = collect_traffic_state(tl_ids)
         
-        # Update controller with traffic state
+        # update controller with traffic state
         controller.update_traffic_state(traffic_state)
         
-        # Get current simulation time
+        # get current simulation time
         current_time = traci.simulation.getTime()
         
-        # Get phase decisions from controller for each junction
+        # get phase decisions from controller for each junction
         for tl_id in tl_ids:
             phase = controller.get_phase_for_junction(tl_id, current_time)
             
@@ -271,11 +266,11 @@ def train_episode(config_path, controller_type, episode_num, exploration_rate,
             except Exception as e:
                 print(f"Error setting traffic light state for {tl_id}: {e}")
         
-        # Collect episode stats
+        # collect episode stats
         if hasattr(controller, 'reward_history') and controller.reward_history:
             episode_rewards.append(controller.reward_history[-1])
         
-        # Collect metrics
+        # collect metrics
         vehicles = traci.vehicle.getIDList()
         if vehicles:
             avg_wait = sum(traci.vehicle.getWaitingTime(v) for v in vehicles) / len(vehicles)
@@ -283,14 +278,14 @@ def train_episode(config_path, controller_type, episode_num, exploration_rate,
             episode_waiting_times.append(avg_wait)
             episode_speeds.append(avg_speed)
         
-        # Step the simulation
+        # step the simulation
         sim.step()
         
-        # Progress indicator for long episodes
+        # progress indicator for long episodes
         if step % 100 == 0 and step > 0:
             print(f"  Episode {episode_num} - Step {step}/{steps_per_episode}")
     
-    # Episode statistics
+    # episode statistics
     stats = {
         "episode": episode_num,
         "rewards": sum(episode_rewards) / len(episode_rewards) if episode_rewards else 0,
@@ -300,14 +295,14 @@ def train_episode(config_path, controller_type, episode_num, exploration_rate,
         "q_table_size": len(controller.q_tables.get(tl_ids[0], {})) if hasattr(controller, 'q_tables') else 0
     }
     
-    # Save the model for this episode
+    # save the model for this episode
     if hasattr(controller, 'save_q_table'):
         model_filename = os.path.join(
             project_root, "data", "models", 
             f"{controller_type.replace(' ', '_').lower()}_episode_{episode_num}.pkl")
         controller.save_q_table(model_filename)
     
-    # Close the simulation
+    # close the simulation
     sim.close()
     
     return controller, stats
@@ -319,14 +314,15 @@ def train_rl_controller(controller_type, episodes=40, steps_per_episode=400,
     Train an RL controller with optimised parameters.
     
     Args:
-        controller_type (str): Type of RL controller ('Wired RL' or 'Wireless RL')
-        episodes (int): Number of training episodes
-        steps_per_episode (int): Number of steps per episode
-        learning_rate (float): Learning rate for Q-learning
-        discount_factor (float): Discount factor for future rewards
-        exploration_rate (float): Initial exploration rate
-        exploration_decay (float): Rate at which exploration decreases
-        continue_training (bool): Whether to continue from previous training
+        controller_type : Type of RL controller ('Wired RL' or 'Wireless RL')
+        episodes : Number of training episodes
+        steps_per_episode : Number of steps per episode
+        learning_rate : Learning rate for Q-learning
+        discount_factor : Discount factor for future rewards
+        exploration_rate : Initial exploration rate
+        exploration_decay : Rate at which exploration decreases
+        continue_training : Whether to continue from previous training
+        
     """
     # Path to the grid configuration
     config_path = os.path.join(project_root, "config", "maps", "grid_network_3x3.sumocfg")
@@ -359,10 +355,10 @@ def train_rl_controller(controller_type, episodes=40, steps_per_episode=400,
         else:
             print("No previous training found. Starting from scratch.")
     
-    # Calculate total episodes to train
+    # calculate total episodes to train
     total_episodes = start_episode + episodes
     
-    # Training statistics
+    # training statistics
     stats = {
         "start_episode": start_episode,
         "total_episodes": total_episodes,
@@ -381,18 +377,18 @@ def train_rl_controller(controller_type, episodes=40, steps_per_episode=400,
     
     print(f"Starting training for {episodes} episodes ({start_episode+1} to {total_episodes})")
     
-    # Main training loop
+    # main training loop
     for episode in range(start_episode, total_episodes):
         # Calculate exploration rate for this episode
         current_exploration = exploration_rate * (exploration_decay ** (episode - start_episode))
         
         print(f"\nTraining episode {episode+1}/{total_episodes} - Exploration rate: {current_exploration:.4f}")
         
-        # Train a single episode
+        # train a single episode
         controller, episode_stats = train_episode(
             config_path, 
             controller_type, 
-            episode + 1,  # Save episodes starting from 1, not 0
+            episode + 1,  # save episodes starting from 1, not 0
             current_exploration, 
             steps_per_episode, 
             learning_rate, 
@@ -404,13 +400,13 @@ def train_rl_controller(controller_type, episodes=40, steps_per_episode=400,
             print(f"Error training episode {episode+1}. Skipping.")
             continue
         
-        # Update latest model path for the next episode
+        # update latest model path for the next episode
         latest_model_path = os.path.join(
             models_dir, 
             f"{controller_type.replace(' ', '_').lower()}_episode_{episode+1}.pkl"
         )
         
-        # Update stats
+        # update stats
         stats["exploration_rates"].append(current_exploration)
         stats["rewards"].append(episode_stats["rewards"])
         stats["waiting_times"].append(episode_stats["waiting_times"])
@@ -420,15 +416,15 @@ def train_rl_controller(controller_type, episodes=40, steps_per_episode=400,
         
         # Print progress
         print(f"Episode {episode+1} completed: Reward={episode_stats['rewards']:.2f}, "
-             f"Wait={episode_stats['waiting_times']:.2f}s, Speed={episode_stats['speeds']:.2f}m/s")
+              f"Wait={episode_stats['waiting_times']:.2f}s, Speed={episode_stats['speeds']:.2f}m/s")
     
-    # Save final model in a special file
+    # save final model in a special file
     if controller is not None and hasattr(controller, 'save_q_table'):
         final_model_path = os.path.join(models_dir, f"{controller_type.replace(' ', '_').lower()}_final.pkl")
         controller.save_q_table(final_model_path)
         print(f"Final model saved to {final_model_path}")
     
-    # Save training statistics
+    # save training statistics
     import json
     stats_filename = os.path.join(models_dir, f"{controller_type.replace(' ', '_').lower()}_training_stats.json")
     
@@ -510,27 +506,27 @@ def main():
     """Train an RL controller with continuing from previous training."""
     parser = argparse.ArgumentParser(description='Train RL controller with optimised parameters')
     parser.add_argument('--controller', type=str, default="Wired RL",
-                      choices=["Wired RL", "Wireless RL"],
-                      help='Type of RL controller to train')
+                        choices=["Wired RL", "Wireless RL"],
+                        help='Type of RL controller to train')
     parser.add_argument('--episodes', type=int, default=40,
-                      help='Number of additional training episodes')
+                        help='Number of additional training episodes')
     parser.add_argument('--steps', type=int, default=400,
-                      help='Number of steps per episode')
+                        help='Number of steps per episode')
     parser.add_argument('--lr', type=float, default=0.3,
-                      help='Learning rate')
+                        help='Learning rate')
     parser.add_argument('--discount', type=float, default=0.8,
-                      help='Discount factor')
+                        help='Discount factor')
     parser.add_argument('--exploration', type=float, default=0.9,
-                      help='Initial exploration rate (will be adjusted based on previous training)')
+                        help='Initial exploration rate (will be adjusted based on previous training)')
     parser.add_argument('--decay', type=float, default=0.8,
-                      help='Exploration decay rate')
+                        help='Exploration decay rate')
     parser.add_argument('--no-continue', action='store_true',
-                      help='Do not continue from previous training (start fresh)')
+                        help='Do not continue from previous training (start fresh)')
     parser.add_argument('--migrate', action='store_true',
-                      help='Migrate models from optimised directory to main directory')
+                        help='Migrate models from optimised directory to main directory')
     args = parser.parse_args()
     
-    # Migrate models if requested
+    # migrate models if requested
     if args.migrate:
         migrate_models()
     

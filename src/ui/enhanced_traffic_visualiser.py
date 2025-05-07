@@ -1,4 +1,3 @@
-# src/ui/enhanced_traffic_visualiser.py
 import os
 import sys
 import argparse
@@ -19,24 +18,18 @@ from src.ai.controller_factory import ControllerFactory
 def find_latest_model(controller_type):
     """
     Find the latest trained model for the specified controller type.
-    
-    Args:
-        controller_type (str): Type of controller ("Wired RL" or "Wireless RL")
-    
-    Returns:
-        str or None: Path to the latest model file, or None if no model is found
     """
-    # Convert controller type to filename format
+    # convert controller type to filename format
     model_prefix = controller_type.replace(' ', '_').lower()
     
-    # Define the models directory
+    # define the models directory
     models_dir = os.path.join(project_root, "data", "models")
     
     if not os.path.exists(models_dir):
         print(f"Models directory not found: {models_dir}")
         return None
     
-    # Find all model files for this controller type
+    # find all model files for this controller type
     model_pattern = os.path.join(models_dir, f"{model_prefix}_episode_*.pkl")
     model_files = glob.glob(model_pattern)
     
@@ -66,20 +59,21 @@ def find_latest_model(controller_type):
 
 def run_enhanced_visualisation(config_path, controller_type, steps=1000, delay=50, model_path=None):
     """
-    Run the enhanced visualisation with a specific controller.
+    visualisation with a specific controller.
     
     Args:
+    
         config_path: Path to the SUMO configuration file
         controller_type: Type of controller to use
         steps: Number of simulation steps to run
         delay: Delay in milliseconds between steps
         model_path: Optional path to a specific model file for RL controllers
     """
-    # Create the visualisation
+    # create the visualisation
     visualisation = EnhancedSumoVisualisation(config_path, width=1024, height=768, use_gui=False)
     visualisation.set_mode(controller_type)
     
-    # Start the visualisation
+    # start the visualisation
     if not visualisation.start():
         print("Failed to start visualisation")
         return
@@ -102,7 +96,7 @@ def run_enhanced_visualisation(config_path, controller_type, steps=1000, delay=5
             if model_path and os.path.exists(model_path):
                 controller_kwargs["model_path"] = model_path
                 print(f"Using specified model: {model_path}")
-            # Otherwise, find the latest trained model
+            # otherwise, find the latest trained model
             else:
                 latest_model = find_latest_model(controller_type)
                 if latest_model:
@@ -111,7 +105,7 @@ def run_enhanced_visualisation(config_path, controller_type, steps=1000, delay=5
                 else:
                     print(f"Warning: No model found for {controller_type}. Will use default parameters.")
         
-        # Create the controller
+        # create the controller
         controller = ControllerFactory.create_controller(controller_type, tl_ids, **controller_kwargs)
         
         print(f"Created {controller_type} controller for traffic lights: {tl_ids}")
@@ -146,7 +140,7 @@ def run_enhanced_visualisation(config_path, controller_type, steps=1000, delay=5
                     elif "B0A0" in lane or "B1A1" in lane:
                         direction = "west"
                     
-                    # Count vehicles on this lane
+                    # count vehicles on this lane
                     vehicle_count = traci.lane.getLastStepVehicleNumber(lane)
                     waiting_time = sum(traci.vehicle.getWaitingTime(v) for v in traci.lane.getLastStepVehicleIDs(lane))
                     queue_length = traci.lane.getLastStepHaltingNumber(lane)
@@ -190,7 +184,7 @@ def run_enhanced_visualisation(config_path, controller_type, steps=1000, delay=5
             # Get current simulation time
             current_time = traci.simulation.getTime()
             
-            # Get phase decisions from controller for each junction
+            # get phase decisions from controller for each junction
             for tl_id in tl_ids:
                 phase = controller.get_phase_for_junction(tl_id, current_time)
                 

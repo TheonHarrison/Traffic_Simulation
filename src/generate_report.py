@@ -5,7 +5,7 @@ import argparse
 from pathlib import Path
 from datetime import datetime
 
-# Add the project root to the Python path
+# add the project root to the Python path
 project_root = Path(__file__).resolve().parent.parent
 sys.path.append(str(project_root))
 
@@ -17,36 +17,32 @@ def load_results(results_file):
 def generate_report(results, output_file=None):
     """
     Generate a comprehensive report from comparison results.
-    
-    Args:
-        results: Comparison results dictionary
-        output_file: Path to save the report
     """
     if output_file is None:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         output_file = os.path.join(project_root, "data", "outputs", f"comparison_report_{timestamp}.md")
     
-    # Create the report directory if it doesn't exist
+    # create the report directory if it doesn't exist
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
     
-    # Extract basic info
+    # extract basic info
     timestamp = results.get("timestamp", "Unknown")
     controllers = list(results["summary"].keys())
     scenarios = list(results["scenarios"].keys())
     metrics = ["avg_waiting_time", "avg_speed", "throughput", "avg_response_time", "avg_decision_time"]
     
-    # Start generating the report
+    # start generating the report
     report = []
     
-    # Title
+    # the title
     report.append("# Traffic Control System Comparison Report")
     report.append(f"*Generated on: {timestamp}*\n")
     
-    # Introduction
+    # introduction
     report.append("## Introduction")
     report.append("This report presents a comparative analysis of different traffic control systems, evaluating their performance across various traffic scenarios. The comparison focuses on the effectiveness of AI-based controllers in both wired and wireless configurations, relative to traditional control methods.\n")
     
-    # Summary of Controllers
+    # summary of Controllers
     report.append("## Controllers Evaluated")
     for controller in controllers:
         if controller == "Traditional":
@@ -57,25 +53,25 @@ def generate_report(results, output_file=None):
             report.append(f"- **{controller}**: AI-based controller operating over a simulated wireless network with variable latency and potential packet loss.")
     report.append("")
     
-    # Scenarios Tested
+    # scenarios Tested
     report.append("## Scenarios Tested")
     for scenario in scenarios:
         report.append(f"- **{scenario.replace('_', ' ').title()}**: Traffic conditions simulating {scenario.replace('_', ' ')}.")
     report.append("")
     
-    # Performance Metrics
+    # performance Metrics
     report.append("## Performance Metrics")
-    report.append("- **Average Waiting Time (s)**: Average time vehicles spend waiting at intersections. Lower values indicate better traffic flow.")
-    report.append("- **Average Speed (m/s)**: Average speed of vehicles in the network. Higher values indicate better traffic flow.")
-    report.append("- **Throughput (vehicles)**: Number of vehicles that successfully completed their routes. Higher values indicate better system capacity.")
-    report.append("- **Average Response Time (ms)**: Time taken for the controller to respond to traffic conditions. Lower values indicate better responsiveness.")
-    report.append("- **Average Decision Time (ms)**: Time taken for the controller to make a decision. Lower values indicate more efficient computation.\n")
+    report.append("- **Average Waiting Time (s) : Average time vehicles spend waiting at intersections. Lower values indicate better traffic flow.")
+    report.append("- **Average Speed (m/s) : Average speed of vehicles in the network. Higher values indicate better traffic flow.")
+    report.append("- **Throughput (vehicles) : Number of vehicles that successfully completed their routes. Higher values indicate better system capacity.")
+    report.append("- **Average Response Time (ms) : Time taken for the controller to respond to traffic conditions. Lower values indicate better responsiveness.")
+    report.append("- **Average Decision Time (ms) : Time taken for the controller to make a decision. Lower values indicate more efficient computation.\n")
     
-    # Overall Performance Summary
+    # overall Performance Summary
     report.append("## Overall Performance Summary")
     report.append("The following table summarizes the overall performance of each controller across all scenarios:\n")
     
-    # Create summary table
+    # create summary table
     report.append("| Controller | Avg Waiting Time (s) | Avg Speed (m/s) | Throughput | Avg Response Time (ms) | Avg Decision Time (ms) |")
     report.append("|------------|---------------------|-----------------|------------|------------------------|------------------------|")
     
@@ -84,11 +80,11 @@ def generate_report(results, output_file=None):
         report.append(f"| {controller} | {summary['avg_waiting_time']:.2f} | {summary['avg_speed']:.2f} | {int(summary['throughput'])} | {summary['avg_response_time']:.2f} | {summary['avg_decision_time']:.2f} |")
     report.append("")
     
-    # Performance by Scenario
+    # performance by Scenario
     report.append("## Performance by Scenario")
     
     for scenario in scenarios:
-        report.append(f"### {scenario.replace('_', ' ').title()}")
+        report.append(f"     {scenario.replace('_', ' ').title()}")
         report.append("| Controller | Avg Waiting Time (s) | Avg Speed (m/s) | Throughput | Avg Response Time (ms) | Avg Decision Time (ms) |")
         report.append("|------------|---------------------|-----------------|------------|------------------------|------------------------|")
         
@@ -99,21 +95,21 @@ def generate_report(results, output_file=None):
         report.append("")
     
     # Key Findings
-    report.append("## Key Findings")
+    report.append("   Key Findings")
     
     # 1. Wired vs Wireless Comparison
     if "Wired AI" in controllers and "Wireless AI" in controllers:
-        report.append("### Wired vs. Wireless AI Comparison")
+        report.append("    Wired vs. Wireless AI Comparison")
         
         wired_summary = results["summary"]["Wired AI"]
         wireless_summary = results["summary"]["Wireless AI"]
         
-        # Calculate percentage differences
+        # calculate percentage differences
         wait_diff_pct = (wired_summary["avg_waiting_time"] - wireless_summary["avg_waiting_time"]) / wired_summary["avg_waiting_time"] * 100
         speed_diff_pct = (wireless_summary["avg_speed"] - wired_summary["avg_speed"]) / wired_summary["avg_speed"] * 100
         throughput_diff_pct = (wireless_summary["throughput"] - wired_summary["throughput"]) / wired_summary["throughput"] * 100
         
-        # Determine which is better overall
+        # determine which is better overall
         metrics_better = [
             wait_diff_pct > 0,  # Wireless better if waiting time is lower
             speed_diff_pct > 0,  # Wireless better if speed is higher
@@ -139,30 +135,30 @@ def generate_report(results, output_file=None):
         report.append(f"- **Throughput**: {'Wireless' if throughput_diff_pct > 0 else 'Wired'} AI performed better by {abs(throughput_diff_pct):.1f}%")
         report.append("")
         
-        # Response and decision time comparison
+        # response and decision time comparison
         report.append("Network characteristics comparison:")
         report.append(f"- **Response Time**: Wired AI: {wired_summary['avg_response_time']:.2f}ms, Wireless AI: {wireless_summary['avg_response_time']:.2f}ms")
         report.append(f"- **Decision Time**: Wired AI: {wired_summary['avg_decision_time']:.2f}ms, Wireless AI: {wireless_summary['avg_decision_time']:.2f}ms")
         report.append("")
     
-    # 2. Traditional vs. AI Comparison
+    # 2. traditional vs. AI Comparison
     if "Traditional" in controllers and ("Wired AI" in controllers or "Wireless AI" in controllers):
         report.append("### Traditional vs. AI-based Controllers")
         
         trad_summary = results["summary"]["Traditional"]
         ai_controllers = [c for c in controllers if "AI" in c]
         
-        # Calculate averages for AI controllers
+        # calculate averages for AI controllers
         ai_wait = sum(results["summary"][c]["avg_waiting_time"] for c in ai_controllers) / len(ai_controllers)
         ai_speed = sum(results["summary"][c]["avg_speed"] for c in ai_controllers) / len(ai_controllers)
         ai_throughput = sum(results["summary"][c]["throughput"] for c in ai_controllers) / len(ai_controllers)
         
-        # Calculate percentage differences
+        # calculate percentage differences
         wait_diff_pct = (trad_summary["avg_waiting_time"] - ai_wait) / trad_summary["avg_waiting_time"] * 100
         speed_diff_pct = (ai_speed - trad_summary["avg_speed"]) / trad_summary["avg_speed"] * 100
         throughput_diff_pct = (ai_throughput - trad_summary["throughput"]) / trad_summary["throughput"] * 100
         
-        # Determine which is better overall
+        # determine which is better overall
         metrics_better = [
             wait_diff_pct > 0,  # AI better if waiting time is lower
             speed_diff_pct > 0,  # AI better if speed is higher
@@ -179,7 +175,7 @@ def generate_report(results, output_file=None):
         else:
             overall_better = "neither"
         
-        # Write findings
+        # write findings
         report.append(f"Overall, the **{overall_better}** controller performed better across the tested scenarios.")
         report.append("")
         report.append("Performance differences:")
@@ -188,11 +184,11 @@ def generate_report(results, output_file=None):
         report.append(f"- **Throughput**: {'AI-based' if throughput_diff_pct > 0 else 'Traditional'} controllers performed better by {abs(throughput_diff_pct):.1f}%")
         report.append("")
     
-    # Conclusions
+    # conclusions
     report.append("## Conclusions")
     report.append("Based on the comprehensive comparison of different traffic control systems across various scenarios, the following conclusions can be drawn:")
     
-    # Determine overall best controller
+    # determine overall best controller
     best_controller = None
     best_wait_time = float('inf')
     
@@ -204,7 +200,7 @@ def generate_report(results, output_file=None):
     
     report.append(f"1. **{best_controller}** showed the best overall performance across all scenarios, with the lowest average waiting time ({best_wait_time:.2f}s).")
     
-    # Add conclusion about wireless vs. wired if both exist
+    # add conclusion about wireless vs. wired if both exist
     if "Wired AI" in controllers and "Wireless AI" in controllers:
         wired_wait = results["summary"]["Wired AI"]["avg_waiting_time"]
         wireless_wait = results["summary"]["Wireless AI"]["avg_waiting_time"]
@@ -216,7 +212,7 @@ def generate_report(results, output_file=None):
         else:
             report.append(f"2. Wireless AI control systems outperformed wired systems by {(wired_wait/wireless_wait - 1)*100:.1f}% in terms of waiting time, suggesting that the adaptability of wireless systems can overcome their network limitations.")
     
-    # Add conclusion about AI vs. traditional if both exist
+    # add conclusion about AI vs. traditional if both exist
     if "Traditional" in controllers and any(c for c in controllers if "AI" in c):
         trad_wait = results["summary"]["Traditional"]["avg_waiting_time"]
         ai_controllers = [c for c in controllers if "AI" in c]
@@ -227,11 +223,11 @@ def generate_report(results, output_file=None):
         else:
             report.append(f"3. Traditional fixed-timing controllers still performed well compared to AI-based solutions, highlighting the effectiveness of well-tuned conventional systems.")
     
-    # Add final dissertation-relevant conclusion
+    # add final dissertation-relevant conclusion
     report.append("4. The comparison results provide valuable insights into the question of whether AI can effectively control traffic systems wirelessly, and how this approach compares to traditional wired systems.")
     report.append("")
     
-    # Write the report to file
+    # write the report to file
     with open(output_file, 'w') as f:
         f.write('\n'.join(report))
     
@@ -247,7 +243,7 @@ def main():
                         help='Path to save the generated report')
     args = parser.parse_args()
     
-    # Check if results file exists
+    # check if results file exists
     if not os.path.exists(args.results):
         print(f"Error: Results file not found: {args.results}")
         return

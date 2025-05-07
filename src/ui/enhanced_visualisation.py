@@ -1,5 +1,3 @@
-# src/ui/enhanced_visualisation.py
-
 import pygame
 import os
 import sys
@@ -16,8 +14,7 @@ class EnhancedVisualisation:
     def __init__(self, width=800, height=600, title="Enhanced AI Traffic Control Simulation", net_file=None):
         """
         Initialise the enhanced visualisation window.
-        
-        Args:
+
             width (int): Width of the window in pixels
             height (int): Height of the window in pixels
             title (str): Title of the window

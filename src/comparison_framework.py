@@ -1,4 +1,3 @@
-# src/comparison_framework.py
 import os
 import sys
 import json
@@ -8,7 +7,7 @@ import numpy as np
 from pathlib import Path
 from datetime import datetime
 
-# Add the project root to the Python path
+# add the project root to the Python path
 project_root = Path(__file__).resolve().parent.parent
 sys.path.append(str(project_root))
 
@@ -21,10 +20,6 @@ class ComparisonFramework:
     def __init__(self, output_dir=None, run_id=None):
         """
         Initialise the comparison framework.
-        
-        Args:
-            output_dir: Base output directory
-            run_id: Identifier for this comparison run
         """
         # Create a unique run ID if not provided
         if run_id is None:
@@ -68,7 +63,7 @@ class ComparisonFramework:
         ]
         
     def run_comparison(self, scenarios=None, controller_types=None, steps=1000, 
-                      runs_per_config=3, gui=False, model_paths=None):
+                       runs_per_config=3, gui=False, model_paths=None):
         """
         Run a complete comparison across specified scenarios and controllers.
         
@@ -80,17 +75,15 @@ class ComparisonFramework:
             gui: Whether to show visualisation GUI
             model_paths: Dictionary mapping controller types to model paths
             
-        Returns:
-            dict: Comprehensive comparison results
         """
-        # Use defaults if not specified
+        # use defaults if not specified
         if scenarios is None:
             scenarios = self.scenarios
         
         if controller_types is None:
             controller_types = self.controller_types
         
-        # Validate controller types
+        # validate controller types
         valid_controllers = []
         for controller in controller_types:
             if controller in self.controller_types:
@@ -102,7 +95,7 @@ class ComparisonFramework:
             print("Error: No valid controller types specified.")
             return {}
         
-        # Initialise results structure
+        # initialise results structure
         comparison_results = {
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "parameters": {
@@ -113,7 +106,7 @@ class ComparisonFramework:
             "summary": {}
         }
         
-        # Run comparison for each scenario
+        # run comparison for each scenario
         for scenario in scenarios:
             print(f"\n{'='*80}")
             print(f"Running comparison for scenario: {scenario}")
@@ -124,23 +117,23 @@ class ComparisonFramework:
             for controller_type in valid_controllers:
                 print(f"\nTesting {controller_type} on {scenario}...")
                 
-                # Get model path for controllers if available
+                # get model path for controllers if available
                 model_path = None
                 if model_paths and controller_type in model_paths:
                     model_path = model_paths[controller_type]
                     print(f"Using pre-trained model: {model_path}")
                 
-                # Initialise controller results
+                # initialise controller results
                 controller_results = {
                     "runs": [],
                     "avg_metrics": {metric: 0 for metric in self.metrics}
                 }
                 
-                # Run multiple times for statistical significance
+                # run multiple times for statistical significance
                 for run in range(runs_per_config):
                     print(f"  Run {run+1}/{runs_per_config}...")
                     
-                    # Run the scenario
+                    # run the scenario
                     run_metrics = self.scenario_runner.run_scenario(
                         scenario_file=os.path.join(project_root, "config", "scenarios", f"{scenario}.rou.xml"),
                         controller_type=controller_type,
@@ -150,15 +143,15 @@ class ComparisonFramework:
                         model_path=model_path
                     )
                     
-                    # Store run results
+                    # store run results
                     controller_results["runs"].append(run_metrics)
                     
-                    # Print run metrics
+                    # print run metrics
                     print(f"    Wait Time: {run_metrics['avg_waiting_time']:.2f}s")
                     print(f"    Speed: {run_metrics['avg_speed']:.2f}m/s")
                     print(f"    Throughput: {run_metrics['throughput']} vehicles")
                 
-                # Calculate average metrics across runs
+                # calculate average metrics across runs
                 for metric in self.metrics:
                     values = [run.get(metric, 0) for run in controller_results["runs"]]
                     if values:
@@ -172,10 +165,10 @@ class ComparisonFramework:
                 for metric, value in controller_results["avg_metrics"].items():
                     print(f"    {metric}: {value:.4f}")
             
-            # Store scenario results
+            # store scenario results
             comparison_results["scenarios"][scenario] = scenario_results
         
-        # Calculate summary metrics across all scenarios
+        # calculate summary metrics across all scenarios
         summary = {}
         for controller_type in valid_controllers:
             controller_summary = {metric: [] for metric in self.metrics}
@@ -211,11 +204,6 @@ class ComparisonFramework:
     def visualise_comparison(self, results, timestamp=None, summary_only=False):
         """
         Generate visualisations from comparison results.
-        
-        Args:
-            results: Comparison results dictionary
-            timestamp: Optional timestamp for file naming
-            summary_only: Whether to generate only summary visualisation
         """
         if not timestamp:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -308,15 +296,15 @@ class ComparisonFramework:
                 
                 # Create bars
                 bars = ax.bar(index + i * bar_width, values, bar_width,
-                             label=controller, color=colours[i])
+                              label=controller, color=colours[i])
                 
                 # Add values on top of bars
                 for j, bar in enumerate(bars):
                     height = bar.get_height()
                     ax.text(bar.get_x() + bar.get_width()/2., height + 0.02 * max(values) if values else 0,
-                           f'{values[j]:.2f}', ha='center', va='bottom', fontsize=8)
+                            f'{values[j]:.2f}', ha='center', va='bottom', fontsize=8)
             
-            # Set labels and title
+            # set labels and title
             ax.set_xlabel('Scenario')
             ax.set_ylabel(metric.replace('_', ' ').title())
             ax.set_title(f'Comparison of {metric.replace("_", " ").title()} Across Scenarios and Controllers')
@@ -359,7 +347,7 @@ class ComparisonFramework:
                 # Add value labels
                 for j, value in enumerate(values):
                     ax.text(j, value + 0.02 * max(values) if values else 0, f'{value:.2f}', 
-                           ha='center', va='bottom', fontsize=8)
+                            ha='center', va='bottom', fontsize=8)
                 
                 # Set labels and title
                 ax.set_xlabel('Scenario')

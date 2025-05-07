@@ -13,9 +13,6 @@ sys.path.append(str(project_root))
 def plot_scenario_comparison(results_file):
     """
     Create comparison plots from scenario test results.
-    
-    Args:
-        results_file: Path to the JSON file with test results
     """
     # Load results
     with open(results_file, 'r') as f:

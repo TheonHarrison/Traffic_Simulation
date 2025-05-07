@@ -14,23 +14,23 @@ from src.ai.reinforcement_learning.rl_controller import RLController
 
 class QLearningController(RLController):
     """
-    Q-Learning implementation for traffic control.
+    Q-Learning for traffic control.
     
-    This controller uses the Q-learning algorithm to learn optimal
-    traffic signal timing policies based on traffic conditions.
+    this controller uses the Q-learning algorithm to learn traffic signal 
+    timing based on traffic conditions.
     """
     def __init__(self, junction_ids, learning_rate=0.15, discount_factor=0.95, 
                 exploration_rate=0.5, state_bins=8, model_path=None):
         """
         Initialise the Q-Learning controller.
         
-        Args:
-            junction_ids (list): List of junction IDs to control
-            learning_rate (float): Alpha parameter for Q-learning updates (0-1)
-            discount_factor (float): Gamma parameter for future reward discounting (0-1)
-            exploration_rate (float): Epsilon parameter for exploration vs. exploitation (0-1)
-            state_bins (int): Number of bins to discretize continuous state variables
-            model_path (str): Path to load a pre-trained Q-table (optional)
+        Argsument:
+            junction_ids: List of junction IDs to control
+            learning_rate: Alpha parameter for Q-learning updates (0-1)
+            discount_factor: Gamma parameter for future reward discounting (0-1)
+            exploration_rate: Epsilon parameter for exploration vs. exploitation (0-1)
+            state_bins: Number of bins to discretize continuous state variables
+            model_path: Path to load a pre-trained Q-table (optional)
         """
         super().__init__(junction_ids, learning_rate, discount_factor, exploration_rate)
         
@@ -40,7 +40,7 @@ class QLearningController(RLController):
         # Initialise Q-table for each junction
         self.q_tables = {junction_id: {} for junction_id in junction_ids}
         
-        # Load pre-trained model if provided
+        # Load pre-trained model if its there
         if model_path and os.path.exists(model_path):
             self.load_q_table(model_path)
             print(f"Loaded pre-trained Q-table from {model_path}")
@@ -54,13 +54,6 @@ class QLearningController(RLController):
     def _discretize_state(self, traffic_state, junction_id):
         """
         Convert continuous traffic state into a discrete state representation.
-        
-        Args:
-            traffic_state (dict): Traffic state information
-            junction_id (str): The ID of the junction
-            
-        Returns:
-            tuple: Discretized state representation
         """
         # Extract relevant metrics
         north_count = traffic_state.get('north_count', 0)
@@ -73,21 +66,21 @@ class QLearningController(RLController):
         east_queue = traffic_state.get('east_queue', 0)
         west_queue = traffic_state.get('west_queue', 0)
         
-        # Calculate aggregate metrics
+        # calculate aggregate metrics
         ns_count = north_count + south_count
         ew_count = east_count + west_count
         
         ns_queue = north_queue + south_queue
         ew_queue = east_queue + west_queue
         
-        # Calculate total waiting time - using the actual total waiting time values
+        # calculate total waiting time - using the actual total waiting time values
         north_wait = traffic_state.get('north_wait', 0) * north_count if north_count > 0 else 0
         south_wait = traffic_state.get('south_wait', 0) * south_count if south_count > 0 else 0
         east_wait = traffic_state.get('east_wait', 0) * east_count if east_count > 0 else 0
         west_wait = traffic_state.get('west_wait', 0) * west_count if west_count > 0 else 0
         total_wait_time = north_wait + south_wait + east_wait + west_wait
         
-        # Initialise last_wait_times if it doesn't exist
+        # initialise last_wait_times if it doesn't exist
         if not hasattr(self, 'last_wait_times'):
             self.last_wait_times = {}
         
@@ -99,7 +92,7 @@ class QLearningController(RLController):
             trend_indicator = 0
         self.last_wait_times[junction_id] = total_wait_time
         
-        # Discretize waiting time for the state representation
+        # discretize waiting time for the state representation
         # Assuming max waiting time around 300 seconds (5 minutes) and dividing into state_bins
         discretized_wait_time = min(self.state_bins-1, int(total_wait_time / (300.0 / self.state_bins)))
         
@@ -124,12 +117,6 @@ class QLearningController(RLController):
     def _get_state(self, junction_id):
         """
         Extract the state representation for a junction.
-        
-        Args:
-            junction_id (str): The ID of the junction
-            
-        Returns:
-            tuple: The discretized state representation
         """
         # Get the traffic state for this junction
         if junction_id not in self.traffic_state:
@@ -149,12 +136,6 @@ class QLearningController(RLController):
         - Minimize waiting time (negative reward for waiting)
         - Maximize throughput (positive reward for moving vehicles)
         - Balance flow (penalize imbalanced vehicle distribution)
-        
-        Args:
-            junction_id (str): The ID of the junction
-            
-        Returns:
-            float: The calculated reward
         """
         if junction_id not in self.traffic_state:
             return 0  # No data, no reward
@@ -179,10 +160,10 @@ class QLearningController(RLController):
         
         # Calculate reward components
         
-        # 1. Waiting time penalty (more negative for longer waits)
+        # Waiting time penalty (more negative for longer waits)
         wait_penalty = -1.0 * (north_wait + south_wait + east_wait + west_wait)
         
-        # 2. Queue length penalty (more negative for longer queues)
+        #Queue length penalty (more negative for longer queues)
         queue_penalty = -2.0 * (north_queue + south_queue + east_queue + west_queue)
         
         # Exponential penalty for long queues
@@ -190,31 +171,30 @@ class QLearningController(RLController):
             if queue_length > 3:  # If queue is getting long
                 queue_penalty -= (queue_length - 3) ** 2  # Exponential penalty
 
-        # 3. Throughput reward (more positive for more vehicles moving)
+        #Throughput reward (more positive for more vehicles moving)
         total_vehicles = north_count + south_count + east_count + west_count
         total_queues = north_queue + south_queue + east_queue + west_queue
         moving_vehicles = max(0, total_vehicles - total_queues)
         throughput_reward = 0.8 * moving_vehicles  # Increased from 0.3 to 0.8
         
-        # 4. Balance reward (penalize imbalance between directions)
+        # balance reward (penalize imbalance between directions)
         ns_total = north_count + south_count
         ew_total = east_count + west_count
         
         if total_vehicles > 0:
-            # Improved balance calculation
             imbalance = abs(ns_total - ew_total) / total_vehicles
             balance_reward = 0.5 * (1.0 - imbalance)
         else:
-            balance_reward = 0.5  # Perfect balance with no vehicles
+            balance_reward = 0.5
         
-        # 5. Queue reduction reward
+        # queue reduction reward
         prev_state = self.current_states.get(junction_id)
         if prev_state is not None:
             prev_traffic_state = self.traffic_state.get(junction_id, {})
             prev_total_queue = (prev_traffic_state.get('north_queue', 0) + 
-                               prev_traffic_state.get('south_queue', 0) + 
-                               prev_traffic_state.get('east_queue', 0) + 
-                               prev_traffic_state.get('west_queue', 0))
+                            prev_traffic_state.get('south_queue', 0) + 
+                            prev_traffic_state.get('east_queue', 0) + 
+                            prev_traffic_state.get('west_queue', 0))
             
             queue_reduction = max(0, prev_total_queue - total_queues)
             queue_reduction_reward = 1.0 * queue_reduction  # Increased from 0.4 to 1.0
@@ -229,14 +209,7 @@ class QLearningController(RLController):
     def _get_q_value(self, state, action, junction_id):
         """
         Get Q-value for a state-action pair.
-        
-        Args:
-            state: The state
-            action: The action
-            junction_id (str): The ID of the junction
-            
-        Returns:
-            float: The Q-value
+        Returns: The Q-value
         """
         q_table = self.q_tables.get(junction_id, {})
         return q_table.get((state, action), 0.0)
@@ -244,13 +217,6 @@ class QLearningController(RLController):
     def _select_action(self, state, junction_id):
         """
         Select an action using epsilon-greedy policy.
-        
-        Args:
-            state: The current state
-            junction_id (str): The ID of the junction
-            
-        Returns:
-            str: The selected phase (action)
         """
         # Exploration: random action
         if np.random.random() < self.exploration_rate:
@@ -285,16 +251,10 @@ class QLearningController(RLController):
     
     def _update_q_value(self, state, action, next_state, reward, junction_id):
         """
-        Update the Q-value for a state-action pair using the Q-learning update rule.
+        Update the Q-value for a state-action pair using the Q-learning update rule =
         
         Q(s,a) = Q(s,a) + α * [r + γ * max(Q(s',a')) - Q(s,a)]
         
-        Args:
-            state: The current state
-            action: The taken action
-            next_state: The resulting state
-            reward (float): The received reward
-            junction_id (str): The ID of the junction
         """
         # Get the current Q-value
         current_q = self._get_q_value(state, action, junction_id)
@@ -320,12 +280,8 @@ class QLearningController(RLController):
         self.q_tables[junction_id][(state, action)] = new_q
     
     def save_q_table(self, filename):
-        """
-        Save the Q-table to a file.
+        """ Save the Q-table to a file.        """
         
-        Args:
-            filename (str): Path to save the Q-table
-        """
         # Create the directory if it doesn't exist
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         
@@ -357,15 +313,8 @@ class QLearningController(RLController):
         return True
     
     def load_q_table(self, filename):
-        """
-        Load the Q-table from a file.
+        """ Load the Q-table from a file."""
         
-        Args:
-            filename (str): Path to load the Q-table from
-            
-        Returns:
-            bool: True if loaded successfully, False otherwise
-        """
         if not os.path.exists(filename):
             print(f"File not found: {filename}")
             return False
@@ -405,7 +354,7 @@ class QLearningController(RLController):
             return False
     
     def get_exploration_stats(self):
-        """Get exploration vs. exploitation statistics."""
+        """Get exploration vs. exploitation stats"""
         total_actions = self.exploration_count + self.exploitation_count
         if total_actions == 0:
             return 0, 0

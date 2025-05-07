@@ -3,13 +3,13 @@ import sys
 import subprocess
 from pathlib import Path
 
-# Add the project root to the Python path
+# add the project root to the Python path
 project_root = Path(__file__).resolve().parent.parent
 sys.path.append(str(project_root))
 
 def generate_network():
     """Generate the SUMO network from the configuration files"""
-    # Path to the SUMO configuration file
+    # path to the SUMO configuration file
     netccfg_path = os.path.join(project_root, "config", "maps", "traffic_grid_3x3.netccfg")
     
     print(f"Generating network from: {netccfg_path}")

@@ -5,7 +5,7 @@ import numpy as np
 import random
 from pathlib import Path
 
-# Add project root to Python path
+# add project root to Python path
 project_root = Path(__file__).resolve().parent.parent.parent.parent
 sys.path.append(str(project_root))
 
@@ -15,18 +15,11 @@ class RLController(TrafficController):
     """
     Base class for reinforcement learning traffic controllers.
     
-    This controller implements the core RL functionality while
-    maintaining compatibility with the existing controller framework.
+    This controller implements the core RL functionality.
     """
     def __init__(self, junction_ids, learning_rate=0.15, discount_factor=0.95, exploration_rate=0.5):
         """
         Initialise the RL controller.
-        
-        Args:
-            junction_ids (list): List of junction IDs to control
-            learning_rate (float): Alpha parameter for Q-learning updates (0-1)
-            discount_factor (float): Gamma parameter for future reward discounting (0-1)
-            exploration_rate (float): Epsilon parameter for exploration vs. exploitation (0-1)
         """
         # Call the parent constructor with only the junction_ids parameter
         super().__init__(junction_ids)
@@ -72,71 +65,31 @@ class RLController(TrafficController):
     def _get_state(self, junction_id):
         """
         Extract the state representation for a junction.
-        
-        To be implemented by subclasses based on specific state representation.
-        
-        Args:
-            junction_id (str): The ID of the junction
-            
-        Returns:
-            State representation (implementation-dependent)
         """
         raise NotImplementedError("Subclasses must implement _get_state method")
     
     def _get_reward(self, junction_id):
         """
         Calculate the reward for the current state.
-        
-        To be implemented by subclasses based on specific reward function.
-        
-        Args:
-            junction_id (str): The ID of the junction
-            
-        Returns:
-            float: The calculated reward
+
         """
         raise NotImplementedError("Subclasses must implement _get_reward method")
     
     def _select_action(self, state, junction_id):
         """
         Select an action using epsilon-greedy policy.
-        
-        To be implemented by subclasses based on specific action selection mechanism.
-        
-        Args:
-            state: The current state
-            junction_id (str): The ID of the junction
-            
-        Returns:
-            The selected action
         """
         raise NotImplementedError("Subclasses must implement _select_action method")
     
     def _update_q_value(self, state, action, next_state, reward, junction_id):
         """
         Update the Q-value for a state-action pair.
-        
-        To be implemented by subclasses based on specific RL algorithm.
-        
-        Args:
-            state: The current state
-            action: The taken action
-            next_state: The resulting state
-            reward (float): The received reward
-            junction_id (str): The ID of the junction
         """
         raise NotImplementedError("Subclasses must implement _update_q_value method")
     
     def decide_phase(self, junction_id, current_time):
         """
         Decide the next traffic light phase using RL.
-        
-        Args:
-            junction_id (str): The ID of the junction to control
-            current_time (float): Current simulation time
-            
-        Returns:
-            str: The traffic light state to set
         """
         # Record start time for response time measurement
         response_start = time.time()
@@ -190,7 +143,7 @@ class RLController(TrafficController):
         return action
     
     def get_average_reward(self):
-        """Get the average reward received by the controller."""
+        """get the average reward received by the controller."""
         if not self.reward_history:
             return 0
         return sum(self.reward_history) / len(self.reward_history)
@@ -198,20 +151,11 @@ class RLController(TrafficController):
     def save_q_table(self, filename):
         """
         Save the Q-table to a file.
-        
-        Args:
-            filename (str): Path to save the Q-table
         """
         raise NotImplementedError("Subclasses must implement save_q_table method")
     
     def load_q_table(self, filename):
         """
         Load the Q-table from a file.
-        
-        Args:
-            filename (str): Path to load the Q-table from
-            
-        Returns:
-            bool: True if loaded successfully, False otherwise
         """
         raise NotImplementedError("Subclasses must implement load_q_table method")

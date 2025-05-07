@@ -1,4 +1,3 @@
-# src/ui/enhanced_sumo_visualisation.py
 import pygame
 import os
 import sys
@@ -32,7 +31,7 @@ class EnhancedSumoVisualisation:
         self.height = height
         self.use_gui = use_gui
         
-        # Get the SUMO network file path from the config directory
+        # get the SUMO network file path from the config directory
         self.net_file_path = self._get_net_file_path()
         
         # Initialise the SUMO simulation
@@ -59,25 +58,25 @@ class EnhancedSumoVisualisation:
                                                      self.offset_y,
                                                      self.zoom)
         
-        # Traffic light positions (will be filled during simulation)
+        # traffic light positions (will be filled during simulation)
         self.traffic_light_positions = {}
         
-        # Mouse tracking for dragging
+        # mouse tracking for dragging
         self.dragging = False
         self.drag_start = None
         
-        # Clock for controlling frame rate
+        # clock for controlling frame rate
         self.clock = pygame.time.Clock()
         self.fps = 30
         
-        # Load fonts
+        # load fonts
         self.font = pygame.font.SysFont("Arial", 16)
         self.id_font = pygame.font.SysFont("Arial", 12)
         
-        # Simulation running flag
+        # simulation running flag
         self.running = False
         
-        # Statistics
+        # stats
         self.stats = {
             "vehicles": 0,
             "avg_speed": 0.0,
@@ -110,14 +109,14 @@ class EnhancedSumoVisualisation:
             if net_file is not None:
                 net_file_value = net_file.get("value")
                 
-                # If it's a relative path, convert to absolute path
+                # if it's a relative path, convert to absolute path
                 if not os.path.isabs(net_file_value):
                     config_dir = os.path.dirname(self.sumo_config_path)
                     return os.path.join(config_dir, net_file_value)
                 return net_file_value
             
             print("Warning: Could not find net-file in SUMO config. Using default.")
-            # Try to find a .net.xml file in the same directory as the config
+            # try to find a .net.xml file in the same directory as the config
             config_dir = os.path.dirname(self.sumo_config_path)
             net_files = [f for f in os.listdir(config_dir) if f.endswith(".net.xml")]
             if net_files:
@@ -130,17 +129,17 @@ class EnhancedSumoVisualisation:
             return None
     
     def _center_view(self):
-        """Center the view on the simulation area"""
+        """center the view on the simulation area"""
         if hasattr(self.mapper, 'min_x') and hasattr(self.mapper, 'max_x'):
-            # Calculate center of the network
+            # calculate center of the network
             center_x = (self.mapper.min_x + self.mapper.max_x) / 2
             center_y = (self.mapper.min_y + self.mapper.max_y) / 2
             
-            # Set offsets to center the view
+            # set offsets to center the view
             self.offset_x = self.width / 2 - center_x * self.zoom * self.mapper.scale
             self.offset_y = self.height / 2 - center_y * self.zoom * self.mapper.scale
             
-            # Update traffic renderer
+            # update traffic renderer
             if hasattr(self, 'traffic_renderer'):
                 self.traffic_renderer.update_view_settings(
                     self.offset_x,
@@ -204,11 +203,11 @@ class EnhancedSumoVisualisation:
     def _update_stats(self):
         """Update simulation statistics."""
         try:
-            # Update vehicle count
+            # update vehicle count
             vehicles = traci.vehicle.getIDList()
             self.stats["vehicles"] = len(vehicles)
             
-            # Update average speed and wait time
+            # update average speed and wait time
             if vehicles:
                 total_speed = sum(traci.vehicle.getSpeed(v) for v in vehicles)
                 total_wait_time = sum(traci.vehicle.getWaitingTime(v) for v in vehicles)
@@ -223,19 +222,19 @@ class EnhancedSumoVisualisation:
                 self.stats["avg_speed"] = 0.0
                 self.stats["avg_wait_time"] = 0.0
             
-            # Update throughput (vehicles that have arrived at their destination)
+            # update throughput (vehicles that have arrived at their destination)
             arrived = traci.simulation.getArrivedNumber()
             self.stats["throughput"] += arrived
             self.performance_metrics["throughput"].append(arrived)
             
-            # Update step number
+            # update step number
             self.stats["step"] = traci.simulation.getTime()
         
         except Exception as e:
             print(f"Error updating stats: {e}")
     
     def _draw_ui_overlay(self):
-        """Draw UI overlay with help text"""
+        """Draw UI overlay"""
         # Draw help text in the bottom left
         help_texts = [
             "Mouse Drag: Pan view",
@@ -255,24 +254,21 @@ class EnhancedSumoVisualisation:
     def step(self, delay_ms=100):
         """
         Perform one simulation and visualisation step with delay to slow down simulation.
-        
-        Args:
-            delay_ms (int): Delay in milliseconds to slow down the simulation
         """
         if not self.running:
             return False
         
         try:
-            # Add delay to slow down simulation
+            # add delay to slow down simulation
             pygame.time.delay(delay_ms)
             
-            # Step the SUMO simulation
+            # step the SUMO simulation
             self.simulation.step()
             
-            # Update statistics
+            # update statistics
             self._update_stats()
             
-            # Handle visualisation events
+            # handle visualisation events
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.close()
