@@ -5,8 +5,9 @@ import numpy as np
 from pathlib import Path
 import time
 import traci
-import multiprocessing as mp
-from tqdm import tqdm
+import glob
+import re
+import shutil
 
 # Add the project root to the Python path
 project_root = Path(__file__).resolve().parent.parent
@@ -16,125 +17,39 @@ from src.utils.sumo_integration import SumoSimulation
 from src.ai.reinforcement_learning.q_learning_controller import QLearningController
 from src.ai.reinforcement_learning.wired_rl_controller import WiredRLController
 from src.ai.reinforcement_learning.wireless_rl_controller import WirelessRLController
+from src.utils.config_utils import find_latest_model
 
-def train_worker(config_path, controller_type, episode, exploration_rate, 
-                steps_per_episode, learning_rate, discount_factor, model_path=None):
-    """Worker function for parallel training"""
-    # Initialize simulation
-    sim = SumoSimulation(config_path, gui=False)
-    sim.start()
+def migrate_models():
+    """Migrate models from optimized directory to main models directory"""
+    optimized_dir = os.path.join(project_root, "data", "models", "optimized")
+    models_dir = os.path.join(project_root, "data", "models")
     
-    # Get traffic light IDs
-    tl_ids = traci.trafficlight.getIDList()
+    if not os.path.exists(optimized_dir):
+        print("No optimized directory found, nothing to migrate")
+        return
     
-    if not tl_ids:
-        print("No traffic lights found!")
-        sim.close()
-        return None
+    # Find all model files in the optimized directory
+    model_files = glob.glob(os.path.join(optimized_dir, "*.pkl"))
     
-    # Create controller with improved parameters
-    if controller_type == "Wired RL":
-        controller = WiredRLController(
-            tl_ids,
-            learning_rate=learning_rate,
-            discount_factor=discount_factor,
-            exploration_rate=exploration_rate,
-            network_latency=0.005,  # Reduced from 0.01
-            state_bins=8,  # Increased from 5
-            model_path=model_path
-        )
-    elif controller_type == "Wireless RL":
-        controller = WirelessRLController(
-            tl_ids,
-            learning_rate=learning_rate,
-            discount_factor=discount_factor,
-            exploration_rate=exploration_rate,
-            base_latency=0.002,  # Reduced from 0.005
-            computation_factor=0.005,  # Reduced from 0.01
-            packet_loss_prob=0.0005,  # Reduced from 0.001
-            state_bins=8,  # Increased from 5
-            model_path=model_path
-        )
-    else:
-        print(f"Invalid controller type: {controller_type}")
-        sim.close()
-        return None
+    if not model_files:
+        print("No model files found in optimized directory")
+        return
     
-    # Episode statistics
-    episode_rewards = []
-    episode_waiting_times = []
-    episode_speeds = []
+    print(f"Found {len(model_files)} model files to migrate")
     
-    # Run the episode
-    for step in range(steps_per_episode):
-        # Collect traffic state (optimized)
-        traffic_state = collect_traffic_state(tl_ids)
+    # Migrate each file
+    for model_file in model_files:
+        filename = os.path.basename(model_file)
         
-        # Update controller with traffic state
-        controller.update_traffic_state(traffic_state)
+        # Rename files to remove "optimized_" from the name
+        new_filename = filename.replace("_optimized_", "_")
+        new_path = os.path.join(models_dir, new_filename)
         
-        # Get current simulation time
-        current_time = traci.simulation.getTime()
-        
-        # Get phase decisions from controller for each junction
-        for tl_id in tl_ids:
-            phase = controller.get_phase_for_junction(tl_id, current_time)
-            
-            # Set traffic light phase in SUMO
-            try:
-                # Get the current state length
-                current_state = traci.trafficlight.getRedYellowGreenState(tl_id)
-                
-                # Ensure phase length matches traffic light state length
-                if len(phase) != len(current_state):
-                    # Adjust phase length to match expected length
-                    if len(phase) < len(current_state):
-                        # Repeat the pattern to match length
-                        phase = phase * (len(current_state) // len(phase)) + phase[:len(current_state) % len(phase)]
-                    else:
-                        # Truncate to expected length
-                        phase = phase[:len(current_state)]
-                
-                traci.trafficlight.setRedYellowGreenState(tl_id, phase)
-            except Exception as e:
-                print(f"Error setting traffic light state for {tl_id}: {e}")
-        
-        # Collect episode stats
-        if hasattr(controller, 'reward_history') and controller.reward_history:
-            episode_rewards.append(controller.reward_history[-1])
-        
-        # Collect metrics
-        vehicles = traci.vehicle.getIDList()
-        if vehicles:
-            avg_wait = sum(traci.vehicle.getWaitingTime(v) for v in vehicles) / len(vehicles)
-            avg_speed = sum(traci.vehicle.getSpeed(v) for v in vehicles) / len(vehicles)
-            episode_waiting_times.append(avg_wait)
-            episode_speeds.append(avg_speed)
-        
-        # Step the simulation
-        sim.step()
+        # Copy the file
+        shutil.copy2(model_file, new_path)
+        print(f"Migrated: {filename} -> {new_filename}")
     
-    # Episode statistics
-    stats = {
-        "episode": episode,
-        "rewards": sum(episode_rewards) / len(episode_rewards) if episode_rewards else 0,
-        "waiting_times": sum(episode_waiting_times) / len(episode_waiting_times) if episode_waiting_times else 0,
-        "speeds": sum(episode_speeds) / len(episode_speeds) if episode_speeds else 0,
-        "throughput": traci.simulation.getArrivedNumber() if hasattr(traci.simulation, 'getArrivedNumber') else 0,
-        "q_table_size": len(controller.q_tables.get(tl_ids[0], {})) if hasattr(controller, 'q_tables') else 0
-    }
-    
-    # Save the model for this episode
-    if hasattr(controller, 'save_q_table'):
-        model_filename = os.path.join(
-            project_root, "data", "models", 
-            f"{controller_type.replace(' ', '_').lower()}_optimized_episode_{episode}.pkl")
-        controller.save_q_table(model_filename)
-    
-    # Close the simulation
-    sim.close()
-    
-    return controller, stats
+    print("Migration complete")
 
 def collect_traffic_state(tl_ids):
     """Optimized traffic state collection"""
@@ -230,22 +145,188 @@ def collect_traffic_state(tl_ids):
     
     return traffic_state
 
-def train_rl_faster(controller_type, episodes=40, steps_per_episode=400, 
-                   learning_rate=0.3, discount_factor=0.8, exploration_rate=0.9,
-                   exploration_decay=0.8, parallel_episodes=4, model_path=None):
+def get_highest_episode_number(controller_type):
     """
-    Train an RL controller with optimized parameters for faster learning.
+    Find the highest episode number for the specified controller type.
+    
+    Args:
+        controller_type (str): Type of controller ("Wired RL" or "Wireless RL")
+        
+    Returns:
+        int: Highest episode number found, or 0 if no models exist
+    """
+    # Convert controller type to filename format
+    model_prefix = controller_type.replace(' ', '_').lower()
+    
+    # Define the models directory
+    models_dir = os.path.join(project_root, "data", "models")
+    
+    if not os.path.exists(models_dir):
+        print(f"Models directory not found: {models_dir}")
+        return 0
+    
+    # Find all model files for this controller type
+    model_pattern = os.path.join(models_dir, f"{model_prefix}_episode_*.pkl")
+    model_files = glob.glob(model_pattern)
+    
+    if not model_files:
+        print(f"No existing models found for {controller_type}")
+        return 0
+    
+    # Extract episode numbers and find the highest one
+    episode_numbers = []
+    for model_file in model_files:
+        match = re.search(r'_episode_(\d+)\.pkl$', model_file)
+        if match:
+            episode_numbers.append(int(match.group(1)))
+    
+    if not episode_numbers:
+        print(f"Could not parse episode numbers from model filenames")
+        return 0
+    
+    highest_episode = max(episode_numbers)
+    print(f"Highest existing episode for {controller_type}: {highest_episode}")
+    
+    return highest_episode
+
+def train_episode(config_path, controller_type, episode_num, exploration_rate, 
+                 steps_per_episode, learning_rate, discount_factor, model_path=None):
+    """Train a single episode"""
+    # Initialize simulation
+    sim = SumoSimulation(config_path, gui=False)
+    sim.start()
+    
+    # Get traffic light IDs
+    tl_ids = traci.trafficlight.getIDList()
+    
+    if not tl_ids:
+        print("No traffic lights found!")
+        sim.close()
+        return None, None
+    
+    # Create controller with improved parameters
+    if controller_type == "Wired RL":
+        controller = WiredRLController(
+            tl_ids,
+            learning_rate=learning_rate,
+            discount_factor=discount_factor,
+            exploration_rate=exploration_rate,
+            network_latency=0.005,
+            state_bins=8,
+            model_path=model_path
+        )
+    elif controller_type == "Wireless RL":
+        controller = WirelessRLController(
+            tl_ids,
+            learning_rate=learning_rate,
+            discount_factor=discount_factor,
+            exploration_rate=exploration_rate,
+            base_latency=0.002,
+            computation_factor=0.005,
+            packet_loss_prob=0.0005,
+            state_bins=8,
+            model_path=model_path
+        )
+    else:
+        print(f"Invalid controller type: {controller_type}")
+        sim.close()
+        return None, None
+    
+    # Episode statistics
+    episode_rewards = []
+    episode_waiting_times = []
+    episode_speeds = []
+    
+    # Run the episode
+    for step in range(steps_per_episode):
+        # Collect traffic state
+        traffic_state = collect_traffic_state(tl_ids)
+        
+        # Update controller with traffic state
+        controller.update_traffic_state(traffic_state)
+        
+        # Get current simulation time
+        current_time = traci.simulation.getTime()
+        
+        # Get phase decisions from controller for each junction
+        for tl_id in tl_ids:
+            phase = controller.get_phase_for_junction(tl_id, current_time)
+            
+            # Set traffic light phase in SUMO
+            try:
+                # Get the current state length
+                current_state = traci.trafficlight.getRedYellowGreenState(tl_id)
+                
+                # Ensure phase length matches traffic light state length
+                if len(phase) != len(current_state):
+                    # Adjust phase length to match expected length
+                    if len(phase) < len(current_state):
+                        # Repeat the pattern to match length
+                        phase = phase * (len(current_state) // len(phase)) + phase[:len(current_state) % len(phase)]
+                    else:
+                        # Truncate to expected length
+                        phase = phase[:len(current_state)]
+                
+                traci.trafficlight.setRedYellowGreenState(tl_id, phase)
+            except Exception as e:
+                print(f"Error setting traffic light state for {tl_id}: {e}")
+        
+        # Collect episode stats
+        if hasattr(controller, 'reward_history') and controller.reward_history:
+            episode_rewards.append(controller.reward_history[-1])
+        
+        # Collect metrics
+        vehicles = traci.vehicle.getIDList()
+        if vehicles:
+            avg_wait = sum(traci.vehicle.getWaitingTime(v) for v in vehicles) / len(vehicles)
+            avg_speed = sum(traci.vehicle.getSpeed(v) for v in vehicles) / len(vehicles)
+            episode_waiting_times.append(avg_wait)
+            episode_speeds.append(avg_speed)
+        
+        # Step the simulation
+        sim.step()
+        
+        # Progress indicator for long episodes
+        if step % 100 == 0 and step > 0:
+            print(f"  Episode {episode_num} - Step {step}/{steps_per_episode}")
+    
+    # Episode statistics
+    stats = {
+        "episode": episode_num,
+        "rewards": sum(episode_rewards) / len(episode_rewards) if episode_rewards else 0,
+        "waiting_times": sum(episode_waiting_times) / len(episode_waiting_times) if episode_waiting_times else 0,
+        "speeds": sum(episode_speeds) / len(episode_speeds) if episode_speeds else 0,
+        "throughput": traci.simulation.getArrivedNumber() if hasattr(traci.simulation, 'getArrivedNumber') else 0,
+        "q_table_size": len(controller.q_tables.get(tl_ids[0], {})) if hasattr(controller, 'q_tables') else 0
+    }
+    
+    # Save the model for this episode
+    if hasattr(controller, 'save_q_table'):
+        model_filename = os.path.join(
+            project_root, "data", "models", 
+            f"{controller_type.replace(' ', '_').lower()}_episode_{episode_num}.pkl")
+        controller.save_q_table(model_filename)
+    
+    # Close the simulation
+    sim.close()
+    
+    return controller, stats
+
+def train_rl_controller(controller_type, episodes=40, steps_per_episode=400, 
+                        learning_rate=0.3, discount_factor=0.8, exploration_rate=0.9,
+                        exploration_decay=0.8, continue_training=True):
+    """
+    Train an RL controller with optimized parameters.
     
     Args:
         controller_type (str): Type of RL controller ('Wired RL' or 'Wireless RL')
-        episodes (int): Number of training episodes (increased to 40)
-        steps_per_episode (int): Number of steps per episode (increased to 400)
-        learning_rate (float): Learning rate for Q-learning (increased to 0.3)
-        discount_factor (float): Discount factor for future rewards (decreased to 0.8)
-        exploration_rate (float): Initial exploration rate (increased to 0.9)
-        exploration_decay (float): Rate at which exploration decreases (faster decay: 0.8)
-        parallel_episodes (int): Number of episodes to run in parallel
-        model_path (str): Path to a pre-trained model (optional)
+        episodes (int): Number of training episodes
+        steps_per_episode (int): Number of steps per episode
+        learning_rate (float): Learning rate for Q-learning
+        discount_factor (float): Discount factor for future rewards
+        exploration_rate (float): Initial exploration rate
+        exploration_decay (float): Rate at which exploration decreases
+        continue_training (bool): Whether to continue from previous training
     """
     # Path to the grid configuration
     config_path = os.path.join(project_root, "config", "maps", "grid_network_3x3.sumocfg")
@@ -255,15 +336,41 @@ def train_rl_faster(controller_type, episodes=40, steps_per_episode=400,
         return
     
     # Create output directory for models
-    output_dir = os.path.join(project_root, "data", "models", "optimized")
-    os.makedirs(output_dir, exist_ok=True)
+    models_dir = os.path.join(project_root, "data", "models")
+    os.makedirs(models_dir, exist_ok=True)
+    
+    # Find the latest model and the highest episode number to continue training
+    start_episode = 0
+    latest_model_path = None
+    
+    if continue_training:
+        # Find the highest episode number
+        start_episode = get_highest_episode_number(controller_type)
+        
+        # If we found previous episodes, get the latest model
+        if start_episode > 0:
+            latest_model_path = find_latest_model(controller_type)
+            print(f"Continuing training from episode {start_episode} using model: {latest_model_path}")
+            
+            # Adjust exploration rate based on progress
+            adjusted_exploration_rate = exploration_rate * (exploration_decay ** start_episode)
+            exploration_rate = max(0.05, adjusted_exploration_rate)
+            print(f"Adjusted exploration rate to {exploration_rate:.4f} based on previous training")
+        else:
+            print("No previous training found. Starting from scratch.")
+    
+    # Calculate total episodes to train
+    total_episodes = start_episode + episodes
     
     # Training statistics
     stats = {
-        "episodes": episodes,
+        "start_episode": start_episode,
+        "total_episodes": total_episodes,
         "steps_per_episode": steps_per_episode,
         "learning_rate": learning_rate,
         "discount_factor": discount_factor,
+        "initial_exploration_rate": exploration_rate,
+        "exploration_decay": exploration_decay,
         "exploration_rates": [],
         "rewards": [],
         "waiting_times": [],
@@ -272,88 +379,78 @@ def train_rl_faster(controller_type, episodes=40, steps_per_episode=400,
         "q_table_sizes": []
     }
     
-    # Determine available CPU cores
-    max_cores = mp.cpu_count() - 1  # Leave one core free
-    parallel_episodes = min(parallel_episodes, max_cores)
-    print(f"Training with {parallel_episodes} parallel episodes on {max_cores} available cores")
+    print(f"Starting training for {episodes} episodes ({start_episode+1} to {total_episodes})")
     
-    # Main training loop with progress bar
-    episode = 0
-    latest_controller = None
+    # Main training loop
+    for episode in range(start_episode, total_episodes):
+        # Calculate exploration rate for this episode
+        current_exploration = exploration_rate * (exploration_decay ** (episode - start_episode))
+        
+        print(f"\nTraining episode {episode+1}/{total_episodes} - Exploration rate: {current_exploration:.4f}")
+        
+        # Train a single episode
+        controller, episode_stats = train_episode(
+            config_path, 
+            controller_type, 
+            episode + 1,  # Save episodes starting from 1, not 0
+            current_exploration, 
+            steps_per_episode, 
+            learning_rate, 
+            discount_factor, 
+            latest_model_path
+        )
+        
+        if controller is None or episode_stats is None:
+            print(f"Error training episode {episode+1}. Skipping.")
+            continue
+        
+        # Update latest model path for the next episode
+        latest_model_path = os.path.join(
+            models_dir, 
+            f"{controller_type.replace(' ', '_').lower()}_episode_{episode+1}.pkl"
+        )
+        
+        # Update stats
+        stats["exploration_rates"].append(current_exploration)
+        stats["rewards"].append(episode_stats["rewards"])
+        stats["waiting_times"].append(episode_stats["waiting_times"])
+        stats["speeds"].append(episode_stats["speeds"])
+        stats["throughputs"].append(episode_stats["throughput"])
+        stats["q_table_sizes"].append(episode_stats["q_table_size"])
+        
+        # Print progress
+        print(f"Episode {episode+1} completed: Reward={episode_stats['rewards']:.2f}, "
+             f"Wait={episode_stats['waiting_times']:.2f}s, Speed={episode_stats['speeds']:.2f}m/s")
     
-    with tqdm(total=episodes, desc="Training Progress") as pbar:
-        while episode < episodes:
-            # Calculate batch size for parallel processing
-            batch_size = min(parallel_episodes, episodes - episode)
-            
-            # Prepare batch of episodes
-            batch_args = []
-            for i in range(batch_size):
-                current_episode = episode + i
-                current_exploration = exploration_rate * (exploration_decay ** current_episode)
-                
-                # Get the latest model path if we have a controller
-                current_model_path = model_path
-                if latest_controller is not None and hasattr(latest_controller, 'save_q_table'):
-                    # Save a temporary model for this batch
-                    temp_model_path = os.path.join(output_dir, f"temp_model_{current_episode}.pkl")
-                    latest_controller.save_q_table(temp_model_path)
-                    current_model_path = temp_model_path
-                
-                batch_args.append((
-                    config_path, controller_type, current_episode, current_exploration,
-                    steps_per_episode, learning_rate, discount_factor, current_model_path
-                ))
-            
-            # Run batch of episodes in parallel
-            pool = mp.Pool(processes=batch_size)
-            results = pool.starmap(train_worker, batch_args)
-            pool.close()
-            pool.join()
-            
-            # Process results
-            for i, result in enumerate(results):
-                if result is None:
-                    continue
-                    
-                controller, episode_stats = result
-                current_episode = episode + i
-                
-                # Update the latest controller (from the last episode)
-                if i == batch_size - 1:
-                    latest_controller = controller
-                
-                # Update stats
-                stats["exploration_rates"].append(exploration_rate * (exploration_decay ** current_episode))
-                stats["rewards"].append(episode_stats["rewards"])
-                stats["waiting_times"].append(episode_stats["waiting_times"])
-                stats["speeds"].append(episode_stats["speeds"])
-                stats["throughputs"].append(episode_stats["throughput"])
-                stats["q_table_sizes"].append(episode_stats["q_table_size"])
-                
-                # Print progress
-                print(f"Episode {current_episode+1}: Reward={episode_stats['rewards']:.2f}, "
-                     f"Wait={episode_stats['waiting_times']:.2f}s, Speed={episode_stats['speeds']:.2f}m/s")
-            
-            # Clean up temporary model files
-            for i in range(batch_size):
-                temp_model_path = os.path.join(output_dir, f"temp_model_{episode + i}.pkl")
-                if os.path.exists(temp_model_path):
-                    os.remove(temp_model_path)
-            
-            # Update progress
-            episode += batch_size
-            pbar.update(batch_size)
-    
-    # Save final model
-    if latest_controller is not None and hasattr(latest_controller, 'save_q_table'):
-        final_model_path = os.path.join(output_dir, f"{controller_type.replace(' ', '_').lower()}_optimized_final.pkl")
-        latest_controller.save_q_table(final_model_path)
+    # Save final model in a special file
+    if controller is not None and hasattr(controller, 'save_q_table'):
+        final_model_path = os.path.join(models_dir, f"{controller_type.replace(' ', '_').lower()}_final.pkl")
+        controller.save_q_table(final_model_path)
         print(f"Final model saved to {final_model_path}")
     
     # Save training statistics
     import json
-    stats_filename = os.path.join(output_dir, f"{controller_type.replace(' ', '_').lower()}_optimized_stats.json")
+    stats_filename = os.path.join(models_dir, f"{controller_type.replace(' ', '_').lower()}_training_stats.json")
+    
+    # Load existing stats if they exist and update
+    if os.path.exists(stats_filename):
+        try:
+            with open(stats_filename, 'r') as f:
+                existing_stats = json.load(f)
+            
+            # Merge the stats
+            if isinstance(existing_stats, dict):
+                for key in ["exploration_rates", "rewards", "waiting_times", "speeds", "throughputs", "q_table_sizes"]:
+                    if key in existing_stats and key in stats:
+                        existing_stats[key].extend(stats[key])
+                        stats[key] = existing_stats[key]
+                
+                # Update other fields
+                stats["total_episodes"] = total_episodes
+                stats["start_episode"] = existing_stats.get("start_episode", 0)
+        except Exception as e:
+            print(f"Error merging existing stats: {e}")
+    
     with open(stats_filename, 'w') as f:
         json.dump(stats, f, indent=2)
     
@@ -366,7 +463,8 @@ def train_rl_faster(controller_type, episodes=40, steps_per_episode=400,
     
     # Plot rewards
     if stats["rewards"]:
-        axs[0, 0].plot(range(1, len(stats["rewards"])+1), stats["rewards"])
+        x_values = range(stats["start_episode"] + 1, stats["start_episode"] + len(stats["rewards"]) + 1)
+        axs[0, 0].plot(x_values, stats["rewards"])
         axs[0, 0].set_title('Average Reward per Episode')
         axs[0, 0].set_xlabel('Episode')
         axs[0, 0].set_ylabel('Average Reward')
@@ -374,7 +472,8 @@ def train_rl_faster(controller_type, episodes=40, steps_per_episode=400,
     
     # Plot waiting times
     if stats["waiting_times"]:
-        axs[0, 1].plot(range(1, len(stats["waiting_times"])+1), stats["waiting_times"])
+        x_values = range(stats["start_episode"] + 1, stats["start_episode"] + len(stats["waiting_times"]) + 1)
+        axs[0, 1].plot(x_values, stats["waiting_times"])
         axs[0, 1].set_title('Average Waiting Time per Episode')
         axs[0, 1].set_xlabel('Episode')
         axs[0, 1].set_ylabel('Waiting Time (s)')
@@ -382,21 +481,24 @@ def train_rl_faster(controller_type, episodes=40, steps_per_episode=400,
     
     # Plot speeds
     if stats["speeds"]:
-        axs[1, 0].plot(range(1, len(stats["speeds"])+1), stats["speeds"])
+        x_values = range(stats["start_episode"] + 1, stats["start_episode"] + len(stats["speeds"]) + 1)
+        axs[1, 0].plot(x_values, stats["speeds"])
         axs[1, 0].set_title('Average Speed per Episode')
         axs[1, 0].set_xlabel('Episode')
         axs[1, 0].set_ylabel('Speed (m/s)')
         axs[1, 0].grid(True)
     
     # Plot exploration rate
-    axs[1, 1].plot(range(1, len(stats["exploration_rates"])+1), stats["exploration_rates"])
-    axs[1, 1].set_title('Exploration Rate')
-    axs[1, 1].set_xlabel('Episode')
-    axs[1, 1].set_ylabel('Exploration Rate')
-    axs[1, 1].grid(True)
+    if stats["exploration_rates"]:
+        x_values = range(stats["start_episode"] + 1, stats["start_episode"] + len(stats["exploration_rates"]) + 1)
+        axs[1, 1].plot(x_values, stats["exploration_rates"])
+        axs[1, 1].set_title('Exploration Rate')
+        axs[1, 1].set_xlabel('Episode')
+        axs[1, 1].set_ylabel('Exploration Rate')
+        axs[1, 1].grid(True)
     
     plt.tight_layout()
-    plot_filename = os.path.join(output_dir, f"{controller_type.replace(' ', '_').lower()}_optimized_learning_curves.png")
+    plot_filename = os.path.join(models_dir, f"{controller_type.replace(' ', '_').lower()}_learning_curves.png")
     plt.savefig(plot_filename)
     plt.close()
     
@@ -405,34 +507,43 @@ def train_rl_faster(controller_type, episodes=40, steps_per_episode=400,
     return stats
 
 def main():
-    """Train an RL controller with optimized parameters for faster learning."""
+    """Train an RL controller with continuing from previous training."""
     parser = argparse.ArgumentParser(description='Train RL controller with optimized parameters')
     parser.add_argument('--controller', type=str, default="Wired RL",
-                    choices=["Wired RL", "Wireless RL"],
-                    help='Type of RL controller to train')
+                      choices=["Wired RL", "Wireless RL"],
+                      help='Type of RL controller to train')
     parser.add_argument('--episodes', type=int, default=40,
-                    help='Number of training episodes')
+                      help='Number of additional training episodes')
     parser.add_argument('--steps', type=int, default=400,
-                    help='Number of steps per episode')
+                      help='Number of steps per episode')
     parser.add_argument('--lr', type=float, default=0.3,
-                    help='Learning rate')
+                      help='Learning rate')
     parser.add_argument('--discount', type=float, default=0.8,
-                    help='Discount factor')
+                      help='Discount factor')
     parser.add_argument('--exploration', type=float, default=0.9,
-                    help='Initial exploration rate')
+                      help='Initial exploration rate (will be adjusted based on previous training)')
     parser.add_argument('--decay', type=float, default=0.8,
-                    help='Exploration decay rate')
-    parser.add_argument('--parallel', type=int, default=4,
-                    help='Number of episodes to run in parallel')
-    parser.add_argument('--model', type=str, default=None,
-                    help='Path to a pre-trained model (optional)')
+                      help='Exploration decay rate')
+    parser.add_argument('--no-continue', action='store_true',
+                      help='Do not continue from previous training (start fresh)')
+    parser.add_argument('--migrate', action='store_true',
+                      help='Migrate models from optimized directory to main directory')
     args = parser.parse_args()
     
-    print(f"Fast training of {args.controller} for {args.episodes} episodes")
-    print(f"Parameters: lr={args.lr}, discount={args.discount}, exploration={args.exploration}, decay={args.decay}")
-    print(f"Parallel episodes: {args.parallel}")
+    # Migrate models if requested
+    if args.migrate:
+        migrate_models()
     
-    train_rl_faster(
+    continue_training = not args.no_continue
+    
+    if continue_training:
+        print(f"Training {args.controller} for {args.episodes} additional episodes (continuing from previous training)")
+    else:
+        print(f"Training {args.controller} for {args.episodes} episodes (starting fresh)")
+        
+    print(f"Parameters: lr={args.lr}, discount={args.discount}, exploration={args.exploration}, decay={args.decay}")
+    
+    train_rl_controller(
         args.controller,
         episodes=args.episodes,
         steps_per_episode=args.steps,
@@ -440,8 +551,7 @@ def main():
         discount_factor=args.discount,
         exploration_rate=args.exploration,
         exploration_decay=args.decay,
-        parallel_episodes=args.parallel,
-        model_path=args.model
+        continue_training=continue_training
     )
 
 if __name__ == "__main__":
