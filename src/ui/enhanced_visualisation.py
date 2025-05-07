@@ -1,4 +1,4 @@
-# src/ui/enhanced_visualization.py
+# src/ui/enhanced_visualisation.py
 
 import pygame
 import os
@@ -9,13 +9,13 @@ from pathlib import Path
 project_root = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(project_root))
 
-class EnhancedVisualization:
+class EnhancedVisualisation:
     """
-    Enhanced visualization with improved graphics for traffic simulation.
+    Enhanced visualisation with improved graphics for traffic simulation.
     """
     def __init__(self, width=800, height=600, title="Enhanced AI Traffic Control Simulation", net_file=None):
         """
-        Initialize the enhanced visualization window.
+        Initialise the enhanced visualisation window.
         
         Args:
             width (int): Width of the window in pixels
@@ -23,7 +23,7 @@ class EnhancedVisualization:
             title (str): Title of the window
             net_file (str): Path to the SUMO network file
         """
-        # Initialize pygame
+        # Initialise pygame
         pygame.init()
         
         # Set up the display
@@ -74,10 +74,10 @@ class EnhancedVisualization:
             "ESC: Quit"
         ]
         
-        print("Enhanced visualization initialized")
+        print("Enhanced visualisation initialized")
     
     def _load_assets(self):
-        """Load image assets for the visualization"""
+        """Load image assets for the visualisation"""
         assets = {}
         
         # Create the assets directory if it doesn't exist
@@ -202,5 +202,5 @@ class EnhancedVisualization:
         self.clock.tick(self.fps)
     
     def close(self):
-        """Close the visualization"""
+        """Close the visualisation"""
         pygame.quit()

@@ -15,12 +15,12 @@ import math
 from src.ai.controller_factory import ControllerFactory
 from src.utils.sumo_integration import SumoSimulation
 
-class TrafficVisualizer:
+class TrafficVisualiser:
     """
-    Custom pygame visualizer for traffic simulation with AI controllers.
+    Custom pygame visualiser for traffic simulation with AI controllers.
     """
     def __init__(self, width=1024, height=768):
-        """Initialize the pygame visualizer"""
+        """Initialise the pygame visualiser"""
         self.width = width
         self.height = height
         self.project_root = project_root
@@ -32,13 +32,13 @@ class TrafficVisualizer:
         self.dragging = False
         self.drag_start = None
         
-        # Initialize pygame
+        # Initialise pygame
         pygame.init()
         pygame.font.init()
         
         # Create display window
         self.screen = pygame.display.set_mode((width, height))
-        pygame.display.set_caption("AI Traffic Control Visualization")
+        pygame.display.set_caption("AI Traffic Control Visualisation")
         
         # Load fonts
         self.title_font = pygame.font.SysFont("Arial", 22, bold=True)
@@ -46,8 +46,8 @@ class TrafficVisualizer:
         self.info_font = pygame.font.SysFont("Arial", 16)
         self.stats_font = pygame.font.SysFont("Arial", 14)
         
-        # Define colors
-        self.colors = {
+        # Define colours
+        self.colours = {
             "background": (240, 240, 240),
             "road": (80, 80, 80),
             "car": (0, 100, 200),
@@ -98,15 +98,15 @@ class TrafficVisualizer:
             "decision_times": []
         }
         
-        # Vehicle ID to color mapping (for consistent colors)
-        self.vehicle_colors = {}
+        # Vehicle ID to color mapping (for consistent colours)
+        self.vehicle_colours = {}
         
         # Create a clock for controlling frame rate
         self.clock = pygame.time.Clock()
     
     def run_simulation(self, scenario_file, controller_type, steps=1000, delay=50):
         """
-        Run the traffic simulation with visualization.
+        Run the traffic simulation with visualisation.
         
         Args:
             scenario_file: Path to the SUMO scenario file
@@ -267,7 +267,7 @@ class TrafficVisualizer:
             Path to the created config file
         """
         # Network file
-        network_file = os.path.join(self.project_root, "config", "maps", "traffic_grid.net.xml")
+        network_file = os.path.join(self.project_root, "config", "maps", "traffic_grid_3x3.net.xml")
         
         # Create a unique config file name
         config_name = f"temp_viz_{os.path.basename(route_file).split('.')[0]}.sumocfg"
@@ -317,16 +317,16 @@ class TrafficVisualizer:
             angle = (90 - angle) % 360
             
             # Track vehicle color to keep it consistent
-            if vid not in self.vehicle_colors:
+            if vid not in self.vehicle_colours:
                 if "emergency" in v_type:
-                    self.vehicle_colors[vid] = self.colors["emergency"]
+                    self.vehicle_colours[vid] = self.colours["emergency"]
                 elif "truck" in v_type:
-                    self.vehicle_colors[vid] = self.colors["truck"]
+                    self.vehicle_colours[vid] = self.colours["truck"]
                 elif "bus" in v_type:
-                    self.vehicle_colors[vid] = self.colors["bus"]
+                    self.vehicle_colours[vid] = self.colours["bus"]
                 else:
                     # Default car color with slight variation
-                    self.vehicle_colors[vid] = self.colors["car"]
+                    self.vehicle_colours[vid] = self.colours["car"]
             
             # Store vehicle data with correct SUMO coordinates
             self.vehicles[vid] = {
@@ -335,7 +335,7 @@ class TrafficVisualizer:
                 "speed": speed,
                 "waiting": waiting_time > 0,
                 "type": v_type,
-                "color": self.vehicle_colors[vid]
+                "color": self.vehicle_colours[vid]
             }
     
     def _update_traffic_lights(self, tl_ids):
@@ -460,7 +460,7 @@ class TrafficVisualizer:
     def _draw_simulation(self, controller_type):
         """Draw the simulation on the pygame screen"""
         # Clear the screen
-        self.screen.fill(self.colors["background"])
+        self.screen.fill(self.colours["background"])
         
         # Draw coordinates to help with debugging
         self._draw_grid_overlay()
@@ -550,7 +550,7 @@ class TrafficVisualizer:
                     lane1_end_screen = self._sumo_to_screen(lane1_end)
                     
                     # Draw the main road line
-                    pygame.draw.line(self.screen, self.colors["road"], 
+                    pygame.draw.line(self.screen, self.colours["road"], 
                                    start_screen, end_screen, 
                                    max(1, int(width * self.zoom)))
                     
@@ -629,11 +629,11 @@ class TrafficVisualizer:
             if i < len(state):
                 c = state[i]
                 if c == 'G' or c == 'g':
-                    color = self.colors["green"]
+                    color = self.colours["green"]
                 elif c == 'Y' or c == 'y':
-                    color = self.colors["yellow"]
+                    color = self.colours["yellow"]
                 else:  # 'R' or 'r' or any other
-                    color = self.colors["red"]
+                    color = self.colours["red"]
                 
                 # Calculate position offset
                 offset_x = direction[0] * intersection_radius * 1.5
@@ -680,7 +680,7 @@ class TrafficVisualizer:
         # Draw the vehicle
         if waiting:
             # Add a red overlay for waiting vehicles
-            pygame.draw.rect(vehicle_surface, self.colors["waiting"], (0, 0, width, height))
+            pygame.draw.rect(vehicle_surface, self.colours["waiting"], (0, 0, width, height))
         else:
             pygame.draw.rect(vehicle_surface, color, (0, 0, width, height))
         
@@ -725,14 +725,14 @@ class TrafficVisualizer:
         self.screen.blit(title, (self.width//2 - title.get_width()//2, 5))
         
         # Draw step counter in bottom right
-        step_text = self.info_font.render(f"Step: {self.step}", True, self.colors["text"])
+        step_text = self.info_font.render(f"Step: {self.step}", True, self.colours["text"])
         self.screen.blit(step_text, (self.width - step_text.get_width() - 10, 
                                 self.height - step_text.get_height() - 10))
         
         # Draw controls info
         control_text = self.stats_font.render(
             "Controls: Arrow Keys = Pan, +/- = Zoom, Mouse Drag = Pan", 
-            True, self.colors["text"])
+            True, self.colours["text"])
         self.screen.blit(control_text, (10, self.height - control_text.get_height() - 10))
     
     def _draw_metrics(self):
@@ -752,7 +752,7 @@ class TrafficVisualizer:
         self.screen.blit(panel_surface, panel_rect)
         
         # Panel title
-        metrics_title = self.subtitle_font.render("Performance Metrics", True, self.colors["text"])
+        metrics_title = self.subtitle_font.render("Performance Metrics", True, self.colours["text"])
         self.screen.blit(metrics_title, (panel_rect.centerx - metrics_title.get_width()//2, panel_rect.top + 5))
         
         # Current metrics
@@ -769,7 +769,7 @@ class TrafficVisualizer:
         ]
         
         for label, value in metrics_to_show:
-            metric_text = self.info_font.render(f"{label}: {value}", True, self.colors["text"])
+            metric_text = self.info_font.render(f"{label}: {value}", True, self.colours["text"])
             self.screen.blit(metric_text, (panel_rect.left + 10, y_offset))
             y_offset += line_height
         
@@ -787,7 +787,7 @@ class TrafficVisualizer:
         # Draw the panel to the screen
         self.screen.blit(traffic_surface, traffic_panel)
         
-        traffic_title = self.subtitle_font.render("Traffic Direction Counts", True, self.colors["text"])
+        traffic_title = self.subtitle_font.render("Traffic Direction Counts", True, self.colours["text"])
         self.screen.blit(traffic_title, (traffic_panel.centerx - traffic_title.get_width()//2, traffic_panel.top + 5))
         
         # Get total vehicle counts by direction
@@ -810,7 +810,7 @@ class TrafficVisualizer:
         ]
         
         for label, count in direction_counts:
-            count_text = self.info_font.render(f"{label}: {count} vehicles", True, self.colors["text"])
+            count_text = self.info_font.render(f"{label}: {count} vehicles", True, self.colours["text"])
             self.screen.blit(count_text, (traffic_panel.left + 10, y_offset))
             y_offset += line_height
     
@@ -874,7 +874,7 @@ class TrafficVisualizer:
         )
 
 def main():
-    """Run the visualization"""
+    """Run the visualisation"""
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Visualize traffic simulation with AI controller')
     parser.add_argument('--scenario', type=str, required=True,
@@ -896,9 +896,9 @@ def main():
         print(f"Scenario file not found: {scenario_path}")
         return
     
-    # Run the visualization
-    visualizer = TrafficVisualizer()
-    visualizer.run_simulation(scenario_path, args.controller, args.steps, args.delay)
+    # Run the visualisation
+    visualiser = TrafficVisualiser()
+    visualiser.run_simulation(scenario_path, args.controller, args.steps, args.delay)
 
 if __name__ == "__main__":
     main()

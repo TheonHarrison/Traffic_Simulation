@@ -33,7 +33,7 @@ def main():
     else:
         print(f"Template file exists at: {template_file_path}")
     
-    # Initialize the traffic generator
+    # Initialise the traffic generator
     print("Initializing TrafficGenerator...")
     generator = TrafficGenerator(template_file_path)
     

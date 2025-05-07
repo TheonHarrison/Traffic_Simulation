@@ -13,7 +13,7 @@ class WirelessController(TrafficController):
     """
     def __init__(self, junction_ids, base_latency=0.05, computation_factor=0.1):
         """
-        Initialize the wireless controller.
+        Initialise the wireless controller.
         
         Args:
             junction_ids (list): List of junction IDs to control
@@ -38,11 +38,11 @@ class WirelessController(TrafficController):
         # Define the phase sequence for each junction
         self.phase_sequence = ["GrYr", "yrGr", "rGry", "ryrG"]
         
-        # Initialize the current phase for each junction
+        # Initialise the current phase for each junction
         for junction_id in junction_ids:
             self.current_phase[junction_id] = self.phase_sequence[0]
         
-        # Last decision parameters - used to implement more dynamic AI behavior
+        # Last decision parameters - used to implement more dynamic AI behaviour
         self.last_decision_params = {}
     
     def _calculate_dynamic_latency(self, traffic_complexity):
@@ -86,7 +86,7 @@ class WirelessController(TrafficController):
         # Default complexity for the case where we don't have traffic data
         traffic_complexity = 0.5
         
-        # Initialize variables for AI decision
+        # Initialise variables for AI decision
         north_south_count = 0
         east_west_count = 0
         waiting_times = {"north": 0, "south": 0, "east": 0, "west": 0}
@@ -126,7 +126,7 @@ class WirelessController(TrafficController):
         response_start = time.time()
         
         # Advanced AI logic for decision making
-        # Store decision parameters for more complex behavior
+        # Store decision parameters for more complex behaviour
         decision_params = {
             'north_south_count': north_south_count,
             'east_west_count': east_west_count,

@@ -20,7 +20,7 @@ class ComparisonFramework:
     """
     def __init__(self, output_dir=None, run_id=None):
         """
-        Initialize the comparison framework.
+        Initialise the comparison framework.
         
         Args:
             output_dir: Base output directory
@@ -38,7 +38,7 @@ class ComparisonFramework:
         self.output_dir = os.path.join(output_dir, f"Comparison_{run_id}")
         os.makedirs(self.output_dir, exist_ok=True)
         
-        # Initialize the scenario runner
+        # Initialise the scenario runner
         self.scenario_runner = ScenarioRunner()
         
         # Define controller types for comparison
@@ -77,7 +77,7 @@ class ComparisonFramework:
             controller_types: List of controller types to test (default: all available)
             steps: Number of simulation steps per run
             runs_per_config: Number of runs for each scenario-controller combination
-            gui: Whether to show visualization GUI
+            gui: Whether to show visualisation GUI
             model_paths: Dictionary mapping controller types to model paths
             
         Returns:
@@ -102,7 +102,7 @@ class ComparisonFramework:
             print("Error: No valid controller types specified.")
             return {}
         
-        # Initialize results structure
+        # Initialise results structure
         comparison_results = {
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "parameters": {
@@ -130,7 +130,7 @@ class ComparisonFramework:
                     model_path = model_paths[controller_type]
                     print(f"Using pre-trained model: {model_path}")
                 
-                # Initialize controller results
+                # Initialise controller results
                 controller_results = {
                     "runs": [],
                     "avg_metrics": {metric: 0 for metric in self.metrics}
@@ -203,19 +203,19 @@ class ComparisonFramework:
         
         print(f"\nComparison results saved to: {results_file}")
         
-        # Generate visualization
-        self.visualize_comparison(comparison_results, timestamp)
+        # Generate visualisation
+        self.visualise_comparison(comparison_results, timestamp)
         
         return comparison_results
     
-    def visualize_comparison(self, results, timestamp=None, summary_only=False):
+    def visualise_comparison(self, results, timestamp=None, summary_only=False):
         """
-        Generate visualizations from comparison results.
+        Generate visualisations from comparison results.
         
         Args:
             results: Comparison results dictionary
             timestamp: Optional timestamp for file naming
-            summary_only: Whether to generate only summary visualization
+            summary_only: Whether to generate only summary visualisation
         """
         if not timestamp:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -225,17 +225,17 @@ class ComparisonFramework:
         scenarios = list(results["scenarios"].keys())
         
         if not controllers or not scenarios:
-            print("No data to visualize.")
+            print("No data to visualise.")
             return
         
-        # Create directory for visualizations
-        vis_dir = os.path.join(self.output_dir, "visualizations")
+        # Create directory for visualisations
+        vis_dir = os.path.join(self.output_dir, "visualisations")
         os.makedirs(vis_dir, exist_ok=True)
         
         # 1. Summary comparison across all scenarios
         self._plot_summary_comparison(results, controllers, vis_dir, timestamp)
         
-        # Only generate detailed visualizations if summary_only is False
+        # Only generate detailed visualisations if summary_only is False
         if not summary_only:
             # 2. Detailed comparison by scenario
             self._plot_scenario_comparison(results, controllers, scenarios, vis_dir, timestamp)
@@ -254,7 +254,7 @@ class ComparisonFramework:
             axs = [axs]
         
         # Colors for controllers
-        colors = plt.cm.tab10(np.linspace(0, 1, len(controllers)))
+        colours = plt.cm.tab10(np.linspace(0, 1, len(controllers)))
         
         # Plot each metric
         for i, metric in enumerate(self.metrics):
@@ -264,7 +264,7 @@ class ComparisonFramework:
             values = [results["summary"][controller].get(metric, 0) for controller in controllers]
             
             # Create bar chart
-            bars = ax.bar(range(len(controllers)), values, color=colors)
+            bars = ax.bar(range(len(controllers)), values, color=colours)
             
             # Add values on top of bars
             for j, bar in enumerate(bars):
@@ -295,7 +295,7 @@ class ComparisonFramework:
             index = np.arange(len(scenarios))
             
             # Colors for controllers
-            colors = plt.cm.tab10(np.linspace(0, 1, len(controllers)))
+            colours = plt.cm.tab10(np.linspace(0, 1, len(controllers)))
             
             # Plot bars for each controller
             for i, controller in enumerate(controllers):
@@ -308,7 +308,7 @@ class ComparisonFramework:
                 
                 # Create bars
                 bars = ax.bar(index + i * bar_width, values, bar_width,
-                             label=controller, color=colors[i])
+                             label=controller, color=colours[i])
                 
                 # Add values on top of bars
                 for j, bar in enumerate(bars):

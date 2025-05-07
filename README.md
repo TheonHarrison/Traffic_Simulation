@@ -1,6 +1,6 @@
 # AI Traffic Control Comparison
 
-This project simulates and compares AI-controlled traffic systems operating over wireless and wired networks. The simulation environment uses SUMO (Simulation of Urban MObility) for traffic simulation and Pygame for visualization.
+This project simulates and compares AI-controlled traffic systems operating over wireless and wired networks. The simulation environment uses SUMO (Simulation of Urban MObility) for traffic simulation and Pygame for visualisation.
 
 ## Project Overview
 
@@ -8,15 +8,15 @@ The goal of this project is to investigate whether AI-driven traffic management 
 
 1. **Wired AI Controller**: Simulates fixed-network communication with consistent latency
 2. **Wireless AI Controller**: Simulates wireless communication with dynamic computation delays
-3. **Traditional Controller**: Uses fixed timing for traffic lights without adaptive behavior
+3. **Traditional Controller**: Uses fixed timing for traffic lights without adaptive behaviour
 
 ## Features
 
 - Realistic traffic simulation with multiple vehicle types (cars, trucks, buses, emergency vehicles)
-- Enhanced visualization with improved graphics and interactive controls
+- Enhanced visualisation with improved graphics and interactive controls
 - Comparative analysis using metrics like waiting time, speed, and throughput
 - Various traffic scenarios to test controller performance under different conditions
-- Comprehensive reporting and visualization of comparison results
+- Comprehensive reporting and visualisation of comparison results
 
 ## Installation
 
@@ -40,10 +40,10 @@ pip install -r requirements.txt
 
 ## Usage
 
-### Running Enhanced Visualization
+### Running Enhanced Visualisation
 
-To run the enhanced visualization with a specific scenario and controller:
-python src/run_enhanced_visualization.py --scenario light_traffic --controller "Wired AI" --steps 1000 --delay 50
+To run the enhanced visualisation with a specific scenario and controller:
+python src/run_enhanced_visualisation.py --scenario light_traffic --controller "Wired AI" --steps 1000 --delay 50
 
 Options:
 - `--scenario`: Name of the scenario to run (light_traffic, moderate_traffic, heavy_traffic, peak_hour_morning)
@@ -61,8 +61,8 @@ Options:
 - `--controllers`: List of controllers to test
 - `--steps`: Number of simulation steps per run
 - `--runs`: Number of runs per configuration
-- `--gui`: Flag to show visualization during comparison
-- `--summary-only`: Only generate summary visualization, not detailed charts
+- `--gui`: Flag to show visualisation during comparison
+- `--summary-only`: Only generate summary visualisation, not detailed charts
 - `--run-id`: Identifier for this comparison run
 - `--output`: Directory to save results
 
@@ -77,7 +77,7 @@ Options:
 
 ## Controls
 
-During enhanced visualization, you can use the following controls:
+During enhanced visualisation, you can use the following controls:
 - **Mouse Drag**: Pan the view
 - **Mouse Wheel**: Zoom in/out
 - **I**: Toggle vehicle IDs display
@@ -102,11 +102,11 @@ traffic_ai_comparison/
 │   ├── generate_report.py  # Report generation
 │   ├── generate_scenarios.py  # Traffic scenario generation
 │   ├── run_comprehensive_comparison.py  # Main comparison script
-│   ├── run_enhanced_visualization.py  # Main visualization script
+│   ├── run_enhanced_visualisation.py  # Main visualisation script
 │   ├── simulation/         # Simulation components
-│   ├── ui/                 # Visualization components
+│   ├── ui/                 # Visualisation components
 │   │   ├── enhanced_renderer.py  # Enhanced traffic rendering
-│   │   └── enhanced_sumo_visualization.py  # Enhanced visualization
+│   │   └── enhanced_sumo_visualisation.py  # Enhanced visualisation
 │   └── utils/              # Utility functions
 ├── README.md
 └── requirements.txt

@@ -8,7 +8,7 @@ class SumoNetworkParser:
     """
     def __init__(self, net_file_path):
         """
-        Initialize the parser with a SUMO .net.xml file path.
+        Initialise the parser with a SUMO .net.xml file path.
         
         Args:
             net_file_path (str): Path to the SUMO network XML file
@@ -95,7 +95,7 @@ class SumoPygameMapper:
     """
     def __init__(self, net_parser, screen_width, screen_height, margin=50):
         """
-        Initialize the coordinate mapper.
+        Initialise the coordinate mapper.
         
         Args:
             net_parser (SumoNetworkParser): Parsed SUMO network
@@ -116,7 +116,7 @@ class SumoPygameMapper:
         
     def _calculate_bounds(self):
         """Calculate the bounding box of the SUMO network."""
-        # Initialize with extreme values
+        # Initialise with extreme values
         self.min_x = float('inf')
         self.max_x = float('-inf')
         self.min_y = float('inf')

@@ -10,7 +10,7 @@ sys.path.append(str(project_root))
 import traci
 from src.utils.sumo_integration import SumoSimulation
 from src.ai.controller_factory import ControllerFactory
-from src.ui.enhanced_sumo_visualization import EnhancedSumoVisualization
+from src.ui.enhanced_sumo_visualisation import EnhancedSumoVisualisation
 
 class ScenarioRunner:
     """
@@ -18,7 +18,7 @@ class ScenarioRunner:
     """
     def __init__(self, network_file=None):
         """
-        Initialize the scenario runner.
+        Initialise the scenario runner.
         
         Args:
             network_file: Path to the SUMO network file to use
@@ -26,7 +26,7 @@ class ScenarioRunner:
         self.project_root = project_root
         
         if network_file is None:
-            network_file = os.path.join(project_root, "config", "maps", "traffic_grid.net.xml")
+            network_file = os.path.join(project_root, "config", "maps", "traffic_grid_3x3.net.xml")
         
         self.network_file = network_file
         self.results_dir = os.path.join(project_root, "data", "outputs", "scenarios")
@@ -81,7 +81,7 @@ class ScenarioRunner:
             scenario_file: Path to the SUMO route file
             controller_type: Type of controller to use ('Wired AI', 'Wireless AI', or 'Traditional')
             steps: Number of simulation steps to run
-            gui: Whether to show Python visualization GUI (not SUMO GUI)
+            gui: Whether to show Python visualisation GUI (not SUMO GUI)
             delay: Delay between steps (ms)
             collect_metrics: Whether to collect performance metrics
             model_path: Path to the model file for RL controllers (optional)
@@ -92,7 +92,7 @@ class ScenarioRunner:
         # Create a SUMO configuration file for this run
         sumo_config = self.create_temp_config(scenario_file)
         
-        # Initialize metrics collection
+        # Initialise metrics collection
         metrics = {
             "controller_type": controller_type,
             "scenario": os.path.basename(scenario_file),
@@ -108,12 +108,12 @@ class ScenarioRunner:
         
         # Choose between GUI and non-GUI simulation
         if gui:
-            # Use Python GUI (EnhancedSumoVisualization)
-            visualization = EnhancedSumoVisualization(sumo_config, width=1024, height=768, use_gui=False)
-            visualization.set_mode(controller_type)
+            # Use Python GUI (EnhancedSumoVisualisation)
+            visualisation = EnhancedSumoVisualisation(sumo_config, width=1024, height=768, use_gui=False)
+            visualisation.set_mode(controller_type)
             
-            if not visualization.start():
-                print("Failed to start visualization")
+            if not visualisation.start():
+                print("Failed to start visualisation")
                 return metrics
             
             # Get traffic light IDs
@@ -121,7 +121,7 @@ class ScenarioRunner:
             
             if not tl_ids:
                 print("Warning: No traffic lights found in the simulation!")
-                visualization.close()
+                visualisation.close()
                 return metrics
             
             # Create controller with model_path if provided
@@ -159,16 +159,16 @@ class ScenarioRunner:
                 if collect_metrics:
                     self._update_metrics(metrics)
                 
-                # Step the visualization
-                if not visualization.step(delay):
+                # Step the visualisation
+                if not visualisation.step(delay):
                     break
                 
                 # Print progress
                 if step % 100 == 0:
                     print(f"Step {step}/{steps}")
             
-            # Close visualization
-            visualization.close()
+            # Close visualisation
+            visualisation.close()
             
         else:
             # Non-GUI simulation - use standard SUMO

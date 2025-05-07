@@ -1,4 +1,4 @@
-# src/ui/enhanced_sumo_visualization.py
+# src/ui/enhanced_sumo_visualisation.py
 import pygame
 import os
 import sys
@@ -13,19 +13,19 @@ from src.ui.enhanced_renderer import EnhancedTrafficRenderer
 from src.ui.sumo_pygame_mapper import SumoNetworkParser, SumoPygameMapper
 from src.utils.sumo_integration import SumoSimulation
 
-class EnhancedSumoVisualization:
+class EnhancedSumoVisualisation:
     """
-    Enhanced SUMO visualization with improved graphics.
+    Enhanced SUMO visualisation with improved graphics.
     """
     def __init__(self, sumo_config_path, width=1024, height=768, use_gui=False):
         """
-        Initialize the enhanced SUMO visualization.
+        Initialise the enhanced SUMO visualisation.
         
         Args:
             sumo_config_path (str): Path to the SUMO configuration file
-            width (int): Width of the visualization window
-            height (int): Height of the visualization window
-            use_gui (bool): Whether to use SUMO GUI alongside the visualization
+            width (int): Width of the visualisation window
+            height (int): Height of the visualisation window
+            use_gui (bool): Whether to use SUMO GUI alongside the visualisation
         """
         self.sumo_config_path = sumo_config_path
         self.width = width
@@ -35,13 +35,13 @@ class EnhancedSumoVisualization:
         # Get the SUMO network file path from the config directory
         self.net_file_path = self._get_net_file_path()
         
-        # Initialize the SUMO simulation
+        # Initialise the SUMO simulation
         self.simulation = SumoSimulation(sumo_config_path, gui=use_gui)
         
-        # Initialize pygame
+        # Initialise pygame
         pygame.init()
         self.screen = pygame.display.set_mode((width, height))
-        pygame.display.set_caption("Enhanced SUMO Traffic Visualization")
+        pygame.display.set_caption("Enhanced SUMO Traffic Visualisation")
         
         # Create network parser and mapper
         self.network_parser = SumoNetworkParser(self.net_file_path)
@@ -94,7 +94,7 @@ class EnhancedSumoVisualization:
             "throughput": []
         }
         
-        print(f"Enhanced SUMO Visualization initialized with {width}x{height} window")
+        print(f"Enhanced SUMO Visualisation initialized with {width}x{height} window")
     
     def _get_net_file_path(self):
         """Extract the network file path from the SUMO configuration file."""
@@ -149,24 +149,24 @@ class EnhancedSumoVisualization:
                 )
     
     def start(self):
-        """Start the SUMO simulation and visualization."""
+        """Start the SUMO simulation and visualisation."""
         try:
             # Start the SUMO simulation
             self.simulation.start()
             
-            # Initialize traffic light positions
-            self._initialize_traffic_light_positions()
+            # Initialise traffic light positions
+            self._initialise_traffic_light_positions()
             
             self.running = True
-            print("Enhanced SUMO Visualization started")
+            print("Enhanced SUMO Visualisation started")
             return True
         
         except Exception as e:
-            print(f"Error starting SUMO visualization: {e}")
+            print(f"Error starting SUMO visualisation: {e}")
             return False
     
-    def _initialize_traffic_light_positions(self):
-        """Initialize traffic light positions based on SUMO network."""
+    def _initialise_traffic_light_positions(self):
+        """Initialise traffic light positions based on SUMO network."""
         try:
             # Get all traffic lights
             tl_ids = traci.trafficlight.getIDList()
@@ -196,7 +196,7 @@ class EnhancedSumoVisualization:
                         self.traffic_light_positions[tl_id] = (0, 0)
                         print(f"WARNING: Using default position for traffic light {tl_id}")
             
-            print(f"Initialized {len(self.traffic_light_positions)} traffic light positions out of {len(tl_ids)} traffic lights")
+            print(f"Initialised {len(self.traffic_light_positions)} traffic light positions out of {len(tl_ids)} traffic lights")
             
         except Exception as e:
             print(f"Error initializing traffic light positions: {e}")   
@@ -254,7 +254,7 @@ class EnhancedSumoVisualization:
 
     def step(self, delay_ms=100):
         """
-        Perform one simulation and visualization step with delay to slow down simulation.
+        Perform one simulation and visualisation step with delay to slow down simulation.
         
         Args:
             delay_ms (int): Delay in milliseconds to slow down the simulation
@@ -272,7 +272,7 @@ class EnhancedSumoVisualization:
             # Update statistics
             self._update_stats()
             
-            # Handle visualization events
+            # Handle visualisation events
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.close()
@@ -330,7 +330,7 @@ class EnhancedSumoVisualization:
             # Clear the screen
             self.screen.fill((240, 240, 240))  # Light gray background
             
-            # Update renderer with current visualization settings
+            # Update renderer with current visualisation settings
             self.traffic_renderer.update_view_settings(
                 self.offset_x,
                 self.offset_y,
@@ -474,9 +474,9 @@ class EnhancedSumoVisualization:
         self.stats["mode"] = mode
 
     def close(self):
-        """Close the simulation and visualization."""
+        """Close the simulation and visualisation."""
         if self.running:
             self.simulation.close()
             pygame.quit()
             self.running = False
-            print("Enhanced SUMO Visualization closed")
+            print("Enhanced SUMO Visualisation closed")

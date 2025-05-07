@@ -13,7 +13,7 @@ class WiredController(TrafficController):
     """
     def __init__(self, junction_ids, network_latency=0.1):
         """
-        Initialize the wired controller.
+        Initialise the wired controller.
         
         Args:
             junction_ids (list): List of junction IDs to control
@@ -36,7 +36,7 @@ class WiredController(TrafficController):
         # Define the phase sequence for each junction
         self.phase_sequence = ["GrYr", "yrGr", "rGry", "ryrG"]
         
-        # Initialize the current phase for each junction
+        # Initialise the current phase for each junction
         for junction_id in junction_ids:
             self.current_phase[junction_id] = self.phase_sequence[0]
     

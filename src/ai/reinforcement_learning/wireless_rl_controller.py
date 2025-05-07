@@ -22,7 +22,7 @@ class WirelessRLController(QLearningController):
                 exploration_rate=0.3, state_bins=3, model_path=None,
                 base_latency=0.05, computation_factor=0.1, packet_loss_prob=0.01):
         """
-        Initialize the Wireless RL controller.
+        Initialise the Wireless RL controller.
         
         Args:
             junction_ids (list): List of junction IDs to control
@@ -49,7 +49,7 @@ class WirelessRLController(QLearningController):
         self.packet_losses = 0
         self.decision_count = 0
         
-        print(f"Initialized Wireless RL Controller with base_latency={base_latency}, " 
+        print(f"Initialised Wireless RL Controller with base_latency={base_latency}, " 
                 f"computation_factor={computation_factor}, packet_loss_prob={packet_loss_prob}")
     
     def _calculate_dynamic_latency(self, traffic_complexity):

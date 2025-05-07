@@ -6,11 +6,11 @@ class TraditionalController(TrafficController):
     Traditional Traffic Controller implementation.
     
     This controller uses fixed timing for traffic lights without any
-    adaptive behavior. It serves as a baseline for comparison.
+    adaptive behaviour. It serves as a baseline for comparison.
     """
     def __init__(self, junction_ids):
         """
-        Initialize the traditional controller.
+        Initialise the traditional controller.
         
         Args:
             junction_ids (list): List of junction IDs to control
@@ -31,7 +31,7 @@ class TraditionalController(TrafficController):
         # Define the phase sequence for each junction
         self.phase_sequence = ["GrYr", "yrGr", "rGry", "ryrG"]
         
-        # Initialize the current phase for each junction
+        # Initialise the current phase for each junction
         for junction_id in junction_ids:
             self.current_phase[junction_id] = self.phase_sequence[0]
     

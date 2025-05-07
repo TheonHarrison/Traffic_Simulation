@@ -43,7 +43,7 @@ def plot_scenario_comparison(results_file):
     ]
     
     # Colors for controllers
-    colors = ['blue', 'green', 'red']
+    colours = ['blue', 'green', 'red']
     
     # Plot each metric in a separate subplot
     for i, (metric, title) in enumerate(metrics):
@@ -55,7 +55,7 @@ def plot_scenario_comparison(results_file):
         
         for j, controller in enumerate(controllers):
             values = [results[scenario][controller][metric] for scenario in scenarios]
-            ax.bar(x + j*width - width, values, width, label=controller, color=colors[j])
+            ax.bar(x + j*width - width, values, width, label=controller, color=colours[j])
         
         ax.set_xlabel('Scenario')
         ax.set_ylabel(title)
@@ -87,7 +87,7 @@ def plot_scenario_comparison(results_file):
     plt.show()
 
 def main():
-    """Create visualizations of scenario test results."""
+    """Create visualisations of scenario test results."""
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Visualize traffic scenario test results')
     parser.add_argument('--results', type=str, required=True,

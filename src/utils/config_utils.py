@@ -5,7 +5,7 @@ from pathlib import Path
 def find_latest_model(controller_type, project_root=None):
     """
     Find the latest trained model for the specified controller type.
-    Prioritizes optimized_final models if they exist.
+    Prioritizes optimised_final models if they exist.
     
     Args:
         controller_type (str): Type of controller ("Wired RL" or "Wireless RL")
@@ -23,38 +23,38 @@ def find_latest_model(controller_type, project_root=None):
     
     # Define the models directories
     models_dir = os.path.join(project_root, "data", "models")
-    optimized_dir = os.path.join(models_dir, "optimized")
+    optimised_dir = os.path.join(models_dir, "optimised")
     
-    # First, check for optimized_final model
-    optimized_final_path = os.path.join(optimized_dir, f"{model_prefix}_optimized_final.pkl")
-    if os.path.exists(optimized_final_path):
-        print(f"Found optimized final model for {controller_type}: {optimized_final_path}")
-        return optimized_final_path
+    # First, check for optimised_final model
+    optimised_final_path = os.path.join(optimised_dir, f"{model_prefix}_optimised_final.pkl")
+    if os.path.exists(optimised_final_path):
+        print(f"Found optimised final model for {controller_type}: {optimised_final_path}")
+        return optimised_final_path
     
-    # If no optimized final model, check for any optimized models
+    # If no optimised final model, check for any optimised models
     import glob
     import re
     
-    optimized_pattern = os.path.join(optimized_dir, f"{model_prefix}_optimized_episode_*.pkl")
-    optimized_files = glob.glob(optimized_pattern)
+    optimised_pattern = os.path.join(optimised_dir, f"{model_prefix}_optimised_episode_*.pkl")
+    optimised_files = glob.glob(optimised_pattern)
     
-    if optimized_files:
+    if optimised_files:
         # Extract episode numbers
-        optimized_episodes = []
-        for model_file in optimized_files:
+        optimised_episodes = []
+        for model_file in optimised_files:
             match = re.search(r'_episode_(\d+)\.pkl$', model_file)
             if match:
-                optimized_episodes.append((int(match.group(1)), model_file))
+                optimised_episodes.append((int(match.group(1)), model_file))
         
-        if optimized_episodes:
+        if optimised_episodes:
             # Sort by episode number and get the latest
-            optimized_episodes.sort(key=lambda x: x[0], reverse=True)
-            latest_episode, latest_model = optimized_episodes[0]
-            print(f"Found latest optimized model for {controller_type}: Episode {latest_episode}")
+            optimised_episodes.sort(key=lambda x: x[0], reverse=True)
+            latest_episode, latest_model = optimised_episodes[0]
+            print(f"Found latest optimised model for {controller_type}: Episode {latest_episode}")
             print(f"Model path: {latest_model}")
             return latest_model
     
-    # If no optimized models, fall back to regular models
+    # If no optimised models, fall back to regular models
     if not os.path.exists(models_dir):
         print(f"Models directory not found: {models_dir}")
         return None
@@ -105,7 +105,7 @@ def create_temp_config(route_file, network_file=None, project_root=None):
     
     # Determine network file if not provided
     if network_file is None:
-        network_file = os.path.join(project_root, "config", "maps", "traffic_grid.net.xml")
+        network_file = os.path.join(project_root, "config", "maps", "traffic_grid_3x3.net.xml")
     
     # Create a unique config file name
     base_name = os.path.basename(route_file).split('.')[0]

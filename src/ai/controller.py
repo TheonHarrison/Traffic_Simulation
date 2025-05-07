@@ -10,13 +10,13 @@ class TrafficController(abc.ABC):
     """
     def __init__(self, junction_ids):
         """
-        Initialize the traffic controller.
+        Initialise the traffic controller.
 
         Args:
             junction_ids (list): List of junction IDs to control
         """
         self.junction_ids = junction_ids
-        # Initialize current_phase to None, we will decide a phase at first step
+        # Initialise current_phase to None, we will decide a phase at first step
         self.current_phase = {junction_id: None for junction_id in junction_ids}
         self.phase_durations = {}  # Will be set by subclasses
         self.last_change_time = {junction_id: 0 for junction_id in junction_ids}
@@ -31,7 +31,7 @@ class TrafficController(abc.ABC):
         # Store the expected traffic light state lengths for each junction
         self.tl_state_lengths = {}
         
-        # Initialize phase sequence
+        # Initialise phase sequence
         self.phase_sequence = ["GrYr", "yrGr", "rGry", "ryrG"]
 
     def update_traffic_state(self, traffic_state):
@@ -72,7 +72,7 @@ class TrafficController(abc.ABC):
         """
         import traci
         
-        # Initialize tl_state_lengths if not already done
+        # Initialise tl_state_lengths if not already done
         if junction_id not in self.tl_state_lengths:
             try:
                 # Get the current state to determine expected length

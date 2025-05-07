@@ -22,7 +22,7 @@ class QLearningController(RLController):
     def __init__(self, junction_ids, learning_rate=0.15, discount_factor=0.95, 
                 exploration_rate=0.5, state_bins=8, model_path=None):
         """
-        Initialize the Q-Learning controller.
+        Initialise the Q-Learning controller.
         
         Args:
             junction_ids (list): List of junction IDs to control
@@ -37,7 +37,7 @@ class QLearningController(RLController):
         # Number of bins for state discretization
         self.state_bins = state_bins
         
-        # Initialize Q-table for each junction
+        # Initialise Q-table for each junction
         self.q_tables = {junction_id: {} for junction_id in junction_ids}
         
         # Load pre-trained model if provided
@@ -49,7 +49,7 @@ class QLearningController(RLController):
         self.exploration_count = 0
         self.exploitation_count = 0
         
-        print(f"Initialized Q-Learning Controller with {state_bins} state bins")
+        print(f"Initialised Q-Learning Controller with {state_bins} state bins")
     
     def _discretize_state(self, traffic_state, junction_id):
         """
@@ -87,7 +87,7 @@ class QLearningController(RLController):
         west_wait = traffic_state.get('west_wait', 0) * west_count if west_count > 0 else 0
         total_wait_time = north_wait + south_wait + east_wait + west_wait
         
-        # Initialize last_wait_times if it doesn't exist
+        # Initialise last_wait_times if it doesn't exist
         if not hasattr(self, 'last_wait_times'):
             self.last_wait_times = {}
         

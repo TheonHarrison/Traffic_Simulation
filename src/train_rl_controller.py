@@ -508,7 +508,7 @@ def create_temp_config(route_file):
     base_name = os.path.basename(route_file).split('.')[0]
     
     # Network file
-    network_file = os.path.join(project_root, "config", "maps", "traffic_grid.net.xml")
+    network_file = os.path.join(project_root, "config", "maps", "traffic_grid_3x3.net.xml")
     
     # Create a unique config file name
     config_name = f"temp_training_{base_name}.sumocfg"

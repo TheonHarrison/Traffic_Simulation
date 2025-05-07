@@ -3,7 +3,7 @@ import pygame
 import math
 from enum import Enum
 
-# Define colors
+# Define colours
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
@@ -19,7 +19,7 @@ class EnhancedTrafficRenderer:
     """
     def __init__(self, screen, mapper, offset_x=0, offset_y=0, zoom=1.0):
         """
-        Initialize the enhanced traffic renderer.
+        Initialise the enhanced traffic renderer.
         
         Args:
             screen: Pygame screen to draw on
@@ -38,8 +38,8 @@ class EnhancedTrafficRenderer:
         self.font = pygame.font.SysFont("Arial", 10)
         self.id_font = pygame.font.SysFont("Arial", 8)
         
-        # Set default colors
-        self.colors = {
+        # Set default colours
+        self.colours = {
             "car": (0, 100, 200),      # Blue
             "bus": (0, 150, 0),        # Green
             "truck": (120, 120, 120),  # Gray
@@ -68,7 +68,7 @@ class EnhancedTrafficRenderer:
         glow_surfaces = {}
         
         for color_name in ["red_light", "yellow_light", "green_light"]:
-            base_color = self.colors[color_name]
+            base_color = self.colours[color_name]
             
             # Create surfaces of different sizes for the glow effect
             for size in [12, 16, 20, 24]:
@@ -161,7 +161,7 @@ class EnhancedTrafficRenderer:
         vehicle_surface = pygame.Surface((width, height), pygame.SRCALPHA)
         
         # Determine color based on vehicle type
-        color = self.colors.get(vehicle_type, self.colors["car"])
+        color = self.colours.get(vehicle_type, self.colours["car"])
         
         # If waiting, make it pulsate red
         if is_waiting:
@@ -242,7 +242,7 @@ class EnhancedTrafficRenderer:
         
         # Draw the outer housing with a slight bevel
         pygame.draw.rect(self.screen, (30, 30, 30), housing_rect, border_radius=int(5 * self.zoom))
-        pygame.draw.rect(self.screen, self.colors["traffic_light_housing"], 
+        pygame.draw.rect(self.screen, self.colours["traffic_light_housing"], 
                         housing_rect.inflate(-4, -4), border_radius=int(3 * self.zoom))
         
         # Draw the ID on top of the traffic light
@@ -257,13 +257,13 @@ class EnhancedTrafficRenderer:
             
             # Determine color based on the state character
             if light in ('G', 'g'):  # Green
-                color = self.colors["green_light"]
+                color = self.colours["green_light"]
                 glow_color = "green_light"
             elif light in ('Y', 'y'):  # Yellow
-                color = self.colors["yellow_light"]
+                color = self.colours["yellow_light"]
                 glow_color = "yellow_light"
             elif light in ('r', 'R'):  # Red
-                color = self.colors["red_light"]
+                color = self.colours["red_light"]
                 glow_color = "red_light"
             else:  # Off or unknown
                 color = (80, 80, 80)
@@ -313,7 +313,7 @@ class EnhancedTrafficRenderer:
                     
                     # Draw the road (increased width by 50%)
                     road_width = 30 * self.zoom
-                    pygame.draw.line(self.screen, self.colors["road"], start, end, int(road_width))
+                    pygame.draw.line(self.screen, self.colours["road"], start, end, int(road_width))
                     
                     # Draw lane markings if long enough
                     if road_length > 30 * self.zoom:
@@ -333,7 +333,7 @@ class EnhancedTrafficRenderer:
                                     line_start = (start[0] + distance * dx, start[1] + distance * dy)
                                     line_end = (start[0] + min(distance + dash_length, road_length) * dx, 
                                                 start[1] + min(distance + dash_length, road_length) * dy)
-                                    pygame.draw.line(self.screen, self.colors["lane_marking"], 
+                                    pygame.draw.line(self.screen, self.colours["lane_marking"], 
                                                    line_start, line_end, max(1, int(self.zoom)))
                                 distance += dash_length if drawing else gap_length
                                 drawing = not drawing
@@ -355,5 +355,5 @@ class EnhancedTrafficRenderer:
         
         # Draw the junction (50% larger)
         radius = max(7, 15 * self.zoom)
-        pygame.draw.circle(self.screen, self.colors["junction"], (screen_x, screen_y), radius)
+        pygame.draw.circle(self.screen, self.colours["junction"], (screen_x, screen_y), radius)
         pygame.draw.circle(self.screen, (50, 50, 50), (screen_x, screen_y), radius, width=2)

@@ -36,7 +36,7 @@ def run_comparison(controller_types, steps=1000, runs=3):
         print(f"Error: Config file not found: {config_path}")
         return {}
     
-    # Initialize results
+    # Initialise results
     results = {
         controller_type: {
             "waiting_times": [],
@@ -70,7 +70,7 @@ def run_comparison(controller_types, steps=1000, runs=3):
         for run in range(runs):
             print(f"  Run {run+1}/{runs}...")
             
-            # Initialize simulation
+            # Initialise simulation
             sim = SumoSimulation(config_path, gui=False)
             sim.start()
             
@@ -267,9 +267,9 @@ def run_comparison(controller_types, steps=1000, runs=3):
     
     return results
 
-def visualize_comparison(results):
+def visualise_comparison(results):
     """
-    Create visualization of comparison results.
+    Create visualisation of comparison results.
     
     Args:
         results: Dictionary of comparison results
@@ -313,7 +313,7 @@ def visualize_comparison(results):
                 values.append(results[controller].get(metric, 0))
         
         # Create bar chart
-        bars = axs[i].bar(range(len(controller_types)), values, color=plt.cm.tab10.colors[:len(controller_types)])
+        bars = axs[i].bar(range(len(controller_types)), values, color=plt.cm.tab10.colours[:len(controller_types)])
         
         # Add value labels on bars
         for j, bar in enumerate(bars):
@@ -336,7 +336,7 @@ def visualize_comparison(results):
     plt.savefig(filename, dpi=300)
     plt.close()
     
-    print(f"Comparison visualization saved to {filename}")
+    print(f"Comparison visualisation saved to {filename}")
     
     # Save results as JSON
     results_file = os.path.join(output_dir, f"controller_comparison_3x3_{timestamp}.json")
@@ -366,9 +366,9 @@ def main():
     
     # Visualize the results
     if results:
-        visualize_comparison(results)
+        visualise_comparison(results)
     else:
-        print("No results to visualize")
+        print("No results to visualise")
 
 if __name__ == "__main__":
     main()

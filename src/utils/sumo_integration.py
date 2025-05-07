@@ -7,7 +7,7 @@ from pathlib import Path
 class SumoSimulation:
     def __init__(self, config_path, gui=False):
         """
-        Initialize the SUMO simulation.
+        Initialise the SUMO simulation.
         
         Args:
             config_path (str): Path to the SUMO configuration file

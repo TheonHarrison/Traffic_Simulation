@@ -20,19 +20,19 @@ from src.ai.reinforcement_learning.wireless_rl_controller import WirelessRLContr
 from src.utils.config_utils import find_latest_model
 
 def migrate_models():
-    """Migrate models from optimized directory to main models directory"""
-    optimized_dir = os.path.join(project_root, "data", "models", "optimized")
+    """Migrate models from optimised directory to main models directory"""
+    optimised_dir = os.path.join(project_root, "data", "models", "optimised")
     models_dir = os.path.join(project_root, "data", "models")
     
-    if not os.path.exists(optimized_dir):
-        print("No optimized directory found, nothing to migrate")
+    if not os.path.exists(optimised_dir):
+        print("No optimised directory found, nothing to migrate")
         return
     
-    # Find all model files in the optimized directory
-    model_files = glob.glob(os.path.join(optimized_dir, "*.pkl"))
+    # Find all model files in the optimised directory
+    model_files = glob.glob(os.path.join(optimised_dir, "*.pkl"))
     
     if not model_files:
-        print("No model files found in optimized directory")
+        print("No model files found in optimised directory")
         return
     
     print(f"Found {len(model_files)} model files to migrate")
@@ -41,8 +41,8 @@ def migrate_models():
     for model_file in model_files:
         filename = os.path.basename(model_file)
         
-        # Rename files to remove "optimized_" from the name
-        new_filename = filename.replace("_optimized_", "_")
+        # Rename files to remove "optimised_" from the name
+        new_filename = filename.replace("_optimised_", "_")
         new_path = os.path.join(models_dir, new_filename)
         
         # Copy the file
@@ -52,7 +52,7 @@ def migrate_models():
     print("Migration complete")
 
 def collect_traffic_state(tl_ids):
-    """Optimized traffic state collection"""
+    """Optimised traffic state collection"""
     traffic_state = {}
     
     # Cache lane direction mapping for faster lookup
@@ -67,7 +67,7 @@ def collect_traffic_state(tl_ids):
                 if incoming_lane not in incoming_lanes:
                     incoming_lanes.append(incoming_lane)
         
-        # Initialize direction counts
+        # Initialise direction counts
         north_count = south_count = east_count = west_count = 0
         north_wait = south_wait = east_wait = west_wait = 0
         north_queue = south_queue = east_queue = west_queue = 0
@@ -90,7 +90,7 @@ def collect_traffic_state(tl_ids):
                     direction = "west"
                 lane_directions[lane] = direction
             
-            # Get lane data in optimized way (batch query)
+            # Get lane data in optimised way (batch query)
             vehicle_count = traci.lane.getLastStepVehicleNumber(lane)
             vehicles = traci.lane.getLastStepVehicleIDs(lane)
             
@@ -192,7 +192,7 @@ def get_highest_episode_number(controller_type):
 def train_episode(config_path, controller_type, episode_num, exploration_rate, 
                  steps_per_episode, learning_rate, discount_factor, model_path=None):
     """Train a single episode"""
-    # Initialize simulation
+    # Initialise simulation
     sim = SumoSimulation(config_path, gui=False)
     sim.start()
     
@@ -316,7 +316,7 @@ def train_rl_controller(controller_type, episodes=40, steps_per_episode=400,
                         learning_rate=0.3, discount_factor=0.8, exploration_rate=0.9,
                         exploration_decay=0.8, continue_training=True):
     """
-    Train an RL controller with optimized parameters.
+    Train an RL controller with optimised parameters.
     
     Args:
         controller_type (str): Type of RL controller ('Wired RL' or 'Wireless RL')
@@ -508,7 +508,7 @@ def train_rl_controller(controller_type, episodes=40, steps_per_episode=400,
 
 def main():
     """Train an RL controller with continuing from previous training."""
-    parser = argparse.ArgumentParser(description='Train RL controller with optimized parameters')
+    parser = argparse.ArgumentParser(description='Train RL controller with optimised parameters')
     parser.add_argument('--controller', type=str, default="Wired RL",
                       choices=["Wired RL", "Wireless RL"],
                       help='Type of RL controller to train')
@@ -527,7 +527,7 @@ def main():
     parser.add_argument('--no-continue', action='store_true',
                       help='Do not continue from previous training (start fresh)')
     parser.add_argument('--migrate', action='store_true',
-                      help='Migrate models from optimized directory to main directory')
+                      help='Migrate models from optimised directory to main directory')
     args = parser.parse_args()
     
     # Migrate models if requested

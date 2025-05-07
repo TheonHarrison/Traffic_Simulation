@@ -10,7 +10,7 @@ class TrafficGenerator:
     """
     def __init__(self, template_file=None):
         """
-        Initialize the traffic generator.
+        Initialise the traffic generator.
         
         Args:
             template_file: Path to template route file with vehicle types and routes defined

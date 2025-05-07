@@ -24,11 +24,11 @@ def main():
     parser.add_argument('--runs', type=int, default=3,
                         help='Number of runs per configuration')
     parser.add_argument('--gui', action='store_true',
-                        help='Show visualization GUI during simulation')
+                        help='Show visualisation GUI during simulation')
     parser.add_argument('--output', type=str, default=None,
                         help='Directory to save results')
     parser.add_argument('--summary-only', action='store_true',
-                        help='Only generate summary visualization, not detailed charts')
+                        help='Only generate summary visualisation, not detailed charts')
     parser.add_argument('--run-id', type=str, default=None,
                         help='Identifier for this comparison run')
     args = parser.parse_args()
@@ -37,7 +37,7 @@ def main():
     if args.run_id is None:
         args.run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
     
-    # Initialize the comparison framework with specified run ID
+    # Initialise the comparison framework with specified run ID
     comparison = ComparisonFramework(output_dir=args.output, run_id=args.run_id)
     
     # Check if RL controllers are included and find model paths
@@ -72,10 +72,10 @@ def main():
         model_paths=model_paths
     )
     
-    # If summary-only flag is set, regenerate visualizations with only summary
+    # If summary-only flag is set, regenerate visualisations with only summary
     if args.summary_only and results:
-        print("\nGenerating summary-only visualization...")
-        comparison.visualize_comparison(results, summary_only=True)
+        print("\nGenerating summary-only visualisation...")
+        comparison.visualise_comparison(results, summary_only=True)
     
     # Print overall summary
     if results:

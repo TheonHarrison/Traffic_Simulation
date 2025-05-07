@@ -20,7 +20,7 @@ class RLController(TrafficController):
     """
     def __init__(self, junction_ids, learning_rate=0.15, discount_factor=0.95, exploration_rate=0.5):
         """
-        Initialize the RL controller.
+        Initialise the RL controller.
         
         Args:
             junction_ids (list): List of junction IDs to control
@@ -50,7 +50,7 @@ class RLController(TrafficController):
             for junction_id in junction_ids
         }
         
-        # Initialize state-action values (Q-table)
+        # Initialise state-action values (Q-table)
         # We'll implement this in subclasses based on specific RL approach
         self.q_table = {}
         
@@ -67,7 +67,7 @@ class RLController(TrafficController):
         # Store traffic light state lengths for each junction
         self.tl_state_lengths = {}
         
-        print(f"Initialized RL Controller with parameters: lr={learning_rate}, df={discount_factor}, er={exploration_rate}")
+        print(f"Initialised RL Controller with parameters: lr={learning_rate}, df={discount_factor}, er={exploration_rate}")
     
     def _get_state(self, junction_id):
         """

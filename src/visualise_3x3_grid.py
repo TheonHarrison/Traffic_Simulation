@@ -1,4 +1,4 @@
-# src/visualize_3x3_grid.py
+# src/visualise_3x3_grid.py
 import os
 import sys
 import argparse
@@ -8,14 +8,14 @@ from pathlib import Path
 project_root = Path(__file__).resolve().parent.parent
 sys.path.append(str(project_root))
 
-from src.ui.enhanced_sumo_visualization import EnhancedSumoVisualization
+from src.ui.enhanced_sumo_visualisation import EnhancedSumoVisualisation
 from src.ai.controller_factory import ControllerFactory
 from src.utils.config_utils import find_latest_model
 import traci
 
-def run_visualization(controller_type, steps=1000, delay=50):
+def run_visualisation(controller_type, steps=1000, delay=50):
     """
-    Run the enhanced visualization on the 3x3 grid.
+    Run the enhanced visualisation on the 3x3 grid.
     
     Args:
         controller_type: Type of controller to use
@@ -29,13 +29,13 @@ def run_visualization(controller_type, steps=1000, delay=50):
         print(f"Error: Config file not found: {config_path}")
         return
     
-    # Create the visualization
-    visualization = EnhancedSumoVisualization(config_path, width=1200, height=800, use_gui=False)
-    visualization.set_mode(controller_type)
+    # Create the visualisation
+    visualisation = EnhancedSumoVisualisation(config_path, width=1200, height=800, use_gui=False)
+    visualisation.set_mode(controller_type)
     
-    # Start the visualization
-    if not visualization.start():
-        print("Failed to start visualization")
+    # Start the visualisation
+    if not visualisation.start():
+        print("Failed to start visualisation")
         return
     
     try:
@@ -44,7 +44,7 @@ def run_visualization(controller_type, steps=1000, delay=50):
         
         if not tl_ids:
             print("No traffic lights found in the simulation!")
-            visualization.close()
+            visualisation.close()
             return
         
         print(f"Found {len(tl_ids)} traffic lights: {tl_ids}")
@@ -65,7 +65,7 @@ def run_visualization(controller_type, steps=1000, delay=50):
         
         print(f"Created {controller_type} controller")
         
-        # Run the visualization
+        # Run the visualisation
         for step in range(steps):
             # Update traffic state in the controller
             traffic_state = {}
@@ -176,25 +176,25 @@ def run_visualization(controller_type, steps=1000, delay=50):
                 except Exception as e:
                     print(f"Error setting traffic light state for {tl_id}: {e}")
             
-            # Step the visualization
-            if not visualization.step(delay):
+            # Step the visualisation
+            if not visualisation.step(delay):
                 break
             
             # Print progress occasionally
             if step % 100 == 0:
                 print(f"Step {step}/{steps}")
         
-        # Close the visualization
-        visualization.close()
+        # Close the visualisation
+        visualisation.close()
         
     except Exception as e:
-        print(f"Error in visualization: {e}")
+        print(f"Error in visualisation: {e}")
         import traceback
         traceback.print_exc()
-        visualization.close()
+        visualisation.close()
 
 def main():
-    """Run the enhanced visualization on the 3x3 grid."""
+    """Run the enhanced visualisation on the 3x3 grid."""
     parser = argparse.ArgumentParser(description='Visualize 3x3 grid traffic simulation')
     parser.add_argument('--controller', type=str, default="Traditional",
                        choices=["Traditional", "Wired AI", "Wireless AI", "Wired RL", "Wireless RL"],
@@ -205,8 +205,8 @@ def main():
                        help='Delay between steps in milliseconds')
     args = parser.parse_args()
     
-    print(f"Running visualization with {args.controller} controller for {args.steps} steps")
-    run_visualization(args.controller, args.steps, args.delay)
+    print(f"Running visualisation with {args.controller} controller for {args.steps} steps")
+    run_visualisation(args.controller, args.steps, args.delay)
 
 if __name__ == "__main__":
     main()

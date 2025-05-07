@@ -21,7 +21,7 @@ class WiredRLController(QLearningController):
                 exploration_rate=0.3, state_bins=3, model_path=None,
                 network_latency=0.1):
         """
-        Initialize the Wired RL controller.
+        Initialise the Wired RL controller.
         
         Args:
             junction_ids (list): List of junction IDs to control
@@ -46,11 +46,11 @@ class WiredRLController(QLearningController):
         self.total_latency = 0
         self.decision_count = 0
         
-        # Initialize traffic light state lengths dictionary if not exists
+        # Initialise traffic light state lengths dictionary if not exists
         if not hasattr(self, 'tl_state_lengths'):
             self.tl_state_lengths = {}
         
-        print(f"Initialized Wired RL Controller with network_latency={network_latency}")
+        print(f"Initialised Wired RL Controller with network_latency={network_latency}")
     
     def decide_phase(self, junction_id, current_time):
         """

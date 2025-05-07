@@ -31,7 +31,7 @@ def run_simulation(controller_type, steps=1000, gui=False, delay=0):
         print(f"Configuration file not found: {config_path}")
         return
     
-    # Initialize the simulation
+    # Initialise the simulation
     sim = SumoSimulation(config_path, gui=gui)
     
     # Start the simulation
@@ -63,7 +63,7 @@ def run_simulation(controller_type, steps=1000, gui=False, delay=0):
         
         print(f"Created {controller_type} controller")
         
-        # Initialize throughput tracking
+        # Initialise throughput tracking
         throughput = 0
         
         # Run the simulation
