@@ -313,7 +313,7 @@ def visualise_comparison(results):
                 values.append(results[controller].get(metric, 0))
         
         # Create bar chart
-        bars = axs[i].bar(range(len(controller_types)), values, color=plt.cm.tab10.colours[:len(controller_types)])
+        bars = axs[i].bar(range(len(controller_types)), values, color=plt.cm.tab10.colors[:len(controller_types)])
         
         # Add value labels on bars
         for j, bar in enumerate(bars):
