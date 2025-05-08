@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='UTF-8'?>
+<?xml version="1.0" encoding="UTF-8"?>
 <routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
     <!-- Vehicle type definitions -->
     <vType id="car" accel="2.9" decel="7.5" sigma="0.5" length="5" minGap="2.5" maxSpeed="16.67" guiShape="passenger"/>
@@ -6,13 +6,109 @@
     <vType id="truck" accel="1.0" decel="5.0" sigma="0.5" length="15" minGap="3.0" maxSpeed="13.89" guiShape="truck"/>
     <vType id="emergency" accel="3.5" decel="9.0" sigma="0.5" length="5" minGap="2.5" maxSpeed="22.22" guiShape="emergency" vClass="emergency"/>
     
-    <!-- Route definitions using the grid network -->
-    <route id="route_north_south" edges="A1A0 A0B0"/>
-    <route id="route_south_north" edges="B0A0 A0A1"/>
-    <route id="route_east_west" edges="B1B0 B0A0"/>
-    <route id="route_west_east" edges="A0B0 B0B1"/>
-    <route id="route_clockwise" edges="A0A1 A1B1 B1B0 B0A0"/>
-    <route id="route_counterclockwise" edges="A0B0 B0B1 B1A1 A1A0"/>
+    <!-- Route definitions for 3x3 grid -->
+    <!-- Horizontal routes (west to east) -->
+    <route id="route_WE_0" edges="A0B0 B0C0"/>
+    <route id="route_WE_1" edges="A1B1 B1C1"/>
+    <route id="route_WE_2" edges="A2B2 B2C2"/>
     
-    <!-- flow definitions will be added by specific scenarios -->
-<flow id="flow_0" type="car" route="route_north_south" begin="0" end="3600" vehsPerHour="300"/><flow id="flow_1" type="car" route="route_south_north" begin="0" end="3600" vehsPerHour="300"/><flow id="flow_2" type="car" route="route_east_west" begin="0" end="3600" vehsPerHour="200"/><flow id="flow_3" type="car" route="route_west_east" begin="0" end="3600" vehsPerHour="200"/><flow id="flow_4" type="car" route="route_clockwise" begin="0" end="3600" vehsPerHour="100"/><flow id="flow_5" type="car" route="route_counterclockwise" begin="0" end="3600" vehsPerHour="100"/><vehicle id="truck_0" type="truck" route="route_south_north" depart="2541"/><vehicle id="truck_1" type="truck" route="route_east_west" depart="3002"/><vehicle id="truck_2" type="truck" route="route_clockwise" depart="2206"/><vehicle id="emergency_3" type="emergency" route="route_west_east" depart="3578"/><vehicle id="truck_4" type="truck" route="route_east_west" depart="2467"/><vehicle id="bus_5" type="bus" route="route_clockwise" depart="1126"/><vehicle id="emergency_6" type="emergency" route="route_south_north" depart="1110"/><vehicle id="truck_7" type="truck" route="route_north_south" depart="149"/><vehicle id="bus_8" type="bus" route="route_south_north" depart="1107"/><vehicle id="truck_9" type="truck" route="route_counterclockwise" depart="2102"/><vehicle id="emergency_10" type="emergency" route="route_counterclockwise" depart="1682"/><vehicle id="bus_11" type="bus" route="route_west_east" depart="282"/><flow id="flow_0" type="car" route="route_north_south" begin="0" end="3600" vehsPerHour="600"/><flow id="flow_1" type="car" route="route_south_north" begin="0" end="3600" vehsPerHour="600"/><flow id="flow_2" type="car" route="route_east_west" begin="0" end="3600" vehsPerHour="400"/><flow id="flow_3" type="car" route="route_west_east" begin="0" end="3600" vehsPerHour="400"/><flow id="flow_4" type="car" route="route_clockwise" begin="0" end="3600" vehsPerHour="200"/><flow id="flow_5" type="car" route="route_counterclockwise" begin="0" end="3600" vehsPerHour="200"/><vehicle id="truck_0" type="truck" route="route_east_west" depart="522"/><vehicle id="emergency_1" type="emergency" route="route_clockwise" depart="919"/><vehicle id="emergency_2" type="emergency" route="route_south_north" depart="3227"/><vehicle id="bus_3" type="bus" route="route_clockwise" depart="3465"/><vehicle id="emergency_4" type="emergency" route="route_counterclockwise" depart="3284"/><vehicle id="emergency_5" type="emergency" route="route_west_east" depart="913"/><vehicle id="bus_6" type="bus" route="route_east_west" depart="1603"/><vehicle id="truck_7" type="truck" route="route_east_west" depart="3163"/><vehicle id="emergency_8" type="emergency" route="route_east_west" depart="3128"/><vehicle id="truck_9" type="truck" route="route_south_north" depart="2492"/><vehicle id="emergency_10" type="emergency" route="route_south_north" depart="1687"/><vehicle id="emergency_11" type="emergency" route="route_east_west" depart="2578"/><vehicle id="bus_12" type="bus" route="route_counterclockwise" depart="1968"/><vehicle id="truck_13" type="truck" route="route_south_north" depart="2739"/><vehicle id="bus_14" type="bus" route="route_north_south" depart="1187"/><vehicle id="bus_15" type="bus" route="route_counterclockwise" depart="3283"/><vehicle id="bus_16" type="bus" route="route_east_west" depart="1844"/><vehicle id="bus_17" type="bus" route="route_south_north" depart="103"/><vehicle id="truck_18" type="truck" route="route_north_south" depart="3121"/><vehicle id="truck_19" type="truck" route="route_south_north" depart="2261"/><vehicle id="emergency_20" type="emergency" route="route_south_north" depart="1268"/><vehicle id="emergency_21" type="emergency" route="route_north_south" depart="3281"/><vehicle id="emergency_22" type="emergency" route="route_west_east" depart="26"/><vehicle id="truck_23" type="truck" route="route_south_north" depart="2075"/><flow id="flow_0" type="car" route="route_north_south" begin="0" end="3600" vehsPerHour="1200"/><flow id="flow_1" type="car" route="route_south_north" begin="0" end="3600" vehsPerHour="1200"/><flow id="flow_2" type="car" route="route_east_west" begin="0" end="3600" vehsPerHour="800"/><flow id="flow_3" type="car" route="route_west_east" begin="0" end="3600" vehsPerHour="800"/><flow id="flow_4" type="car" route="route_clockwise" begin="0" end="3600" vehsPerHour="400"/><flow id="flow_5" type="car" route="route_counterclockwise" begin="0" end="3600" vehsPerHour="400"/><vehicle id="truck_0" type="truck" route="route_east_west" depart="626"/><vehicle id="bus_1" type="bus" route="route_counterclockwise" depart="2826"/><vehicle id="emergency_2" type="emergency" route="route_north_south" depart="3531"/><vehicle id="emergency_3" type="emergency" route="route_south_north" depart="3400"/><vehicle id="bus_4" type="bus" route="route_north_south" depart="973"/><vehicle id="emergency_5" type="emergency" route="route_west_east" depart="568"/><vehicle id="truck_6" type="truck" route="route_counterclockwise" depart="607"/><vehicle id="truck_7" type="truck" route="route_west_east" depart="2396"/><vehicle id="emergency_8" type="emergency" route="route_west_east" depart="3362"/><vehicle id="truck_9" type="truck" route="route_west_east" depart="3315"/><vehicle id="truck_10" type="truck" route="route_south_north" depart="1390"/><vehicle id="truck_11" type="truck" route="route_counterclockwise" depart="286"/><vehicle id="bus_12" type="bus" route="route_east_west" depart="1477"/><vehicle id="truck_13" type="truck" route="route_clockwise" depart="909"/><vehicle id="bus_14" type="bus" route="route_clockwise" depart="1252"/><vehicle id="emergency_15" type="emergency" route="route_west_east" depart="654"/><vehicle id="bus_16" type="bus" route="route_north_south" depart="2947"/><vehicle id="bus_17" type="bus" route="route_east_west" depart="2967"/><vehicle id="emergency_18" type="emergency" route="route_north_south" depart="2110"/><vehicle id="emergency_19" type="emergency" route="route_clockwise" depart="1228"/><vehicle id="truck_20" type="truck" route="route_clockwise" depart="824"/><vehicle id="truck_21" type="truck" route="route_west_east" depart="276"/><vehicle id="emergency_22" type="emergency" route="route_counterclockwise" depart="2634"/><vehicle id="bus_23" type="bus" route="route_east_west" depart="88"/><vehicle id="bus_24" type="bus" route="route_south_north" depart="2162"/><vehicle id="truck_25" type="truck" route="route_counterclockwise" depart="1869"/><vehicle id="emergency_26" type="emergency" route="route_clockwise" depart="798"/><vehicle id="bus_27" type="bus" route="route_east_west" depart="3185"/><vehicle id="truck_28" type="truck" route="route_north_south" depart="2283"/><vehicle id="truck_29" type="truck" route="route_east_west" depart="3030"/><vehicle id="emergency_30" type="emergency" route="route_counterclockwise" depart="1597"/><vehicle id="bus_31" type="bus" route="route_west_east" depart="1792"/><vehicle id="emergency_32" type="emergency" route="route_south_north" depart="2311"/><vehicle id="bus_33" type="bus" route="route_counterclockwise" depart="2330"/><vehicle id="bus_34" type="bus" route="route_counterclockwise" depart="1468"/><vehicle id="emergency_35" type="emergency" route="route_east_west" depart="545"/><vehicle id="emergency_36" type="emergency" route="route_clockwise" depart="1674"/><vehicle id="emergency_37" type="emergency" route="route_east_west" depart="2675"/><vehicle id="emergency_38" type="emergency" route="route_west_east" depart="381"/><vehicle id="emergency_39" type="emergency" route="route_west_east" depart="1322"/><vehicle id="truck_40" type="truck" route="route_south_north" depart="1921"/><vehicle id="bus_41" type="bus" route="route_east_west" depart="3585"/><vehicle id="truck_42" type="truck" route="route_west_east" depart="2271"/><vehicle id="emergency_43" type="emergency" route="route_north_south" depart="2942"/><vehicle id="emergency_44" type="emergency" route="route_east_west" depart="1710"/><vehicle id="truck_45" type="truck" route="route_north_south" depart="755"/><vehicle id="bus_46" type="bus" route="route_east_west" depart="2111"/><vehicle id="bus_47" type="bus" route="route_clockwise" depart="1307"/><flow id="flow_pre_peak_0" type="car" route="route_north_south" begin="0" end="600" vehsPerHour="400"/><flow id="flow_pre_peak_1" type="car" route="route_south_north" begin="0" end="600" vehsPerHour="800"/><flow id="flow_pre_peak_2" type="car" route="route_east_west" begin="0" end="600" vehsPerHour="300"/><flow id="flow_pre_peak_3" type="car" route="route_west_east" begin="0" end="600" vehsPerHour="600"/><flow id="flow_pre_peak_4" type="car" route="route_clockwise" begin="0" end="600" vehsPerHour="200"/><flow id="flow_pre_peak_5" type="car" route="route_counterclockwise" begin="0" end="600" vehsPerHour="200"/><flow id="flow_peak_6" type="car" route="route_north_south" begin="600" end="1800" vehsPerHour="600"/><flow id="flow_peak_7" type="car" route="route_south_north" begin="600" end="1800" vehsPerHour="1600"/><flow id="flow_peak_8" type="car" route="route_east_west" begin="600" end="1800" vehsPerHour="500"/><flow id="flow_peak_9" type="car" route="route_west_east" begin="600" end="1800" vehsPerHour="1200"/><flow id="flow_peak_10" type="car" route="route_clockwise" begin="600" end="1800" vehsPerHour="300"/><flow id="flow_peak_11" type="car" route="route_counterclockwise" begin="600" end="1800" vehsPerHour="300"/><flow id="flow_post_peak_12" type="car" route="route_north_south" begin="1800" end="3600" vehsPerHour="400"/><flow id="flow_post_peak_13" type="car" route="route_south_north" begin="1800" end="3600" vehsPerHour="800"/><flow id="flow_post_peak_14" type="car" route="route_east_west" begin="1800" end="3600" vehsPerHour="300"/><flow id="flow_post_peak_15" type="car" route="route_west_east" begin="1800" end="3600" vehsPerHour="600"/><flow id="flow_post_peak_16" type="car" route="route_clockwise" begin="1800" end="3600" vehsPerHour="200"/><flow id="flow_post_peak_17" type="car" route="route_counterclockwise" begin="1800" end="3600" vehsPerHour="200"/><vehicle id="truck_0" type="truck" route="route_counterclockwise" depart="1649"/><vehicle id="bus_1" type="bus" route="route_clockwise" depart="94"/><vehicle id="truck_2" type="truck" route="route_east_west" depart="3522"/><vehicle id="truck_3" type="truck" route="route_clockwise" depart="452"/><vehicle id="truck_4" type="truck" route="route_clockwise" depart="3412"/><vehicle id="bus_5" type="bus" route="route_counterclockwise" depart="742"/><vehicle id="truck_6" type="truck" route="route_west_east" depart="3053"/><vehicle id="bus_7" type="bus" route="route_east_west" depart="43"/><vehicle id="bus_8" type="bus" route="route_north_south" depart="1376"/><vehicle id="emergency_9" type="emergency" route="route_west_east" depart="442"/><vehicle id="emergency_10" type="emergency" route="route_south_north" depart="2089"/><vehicle id="emergency_11" type="emergency" route="route_east_west" depart="3518"/><vehicle id="bus_12" type="bus" route="route_counterclockwise" depart="2798"/><vehicle id="emergency_13" type="emergency" route="route_counterclockwise" depart="503"/><vehicle id="truck_14" type="truck" route="route_west_east" depart="2613"/><vehicle id="emergency_15" type="emergency" route="route_north_south" depart="2891"/><vehicle id="bus_16" type="bus" route="route_counterclockwise" depart="2742"/><vehicle id="emergency_17" type="emergency" route="route_counterclockwise" depart="837"/><vehicle id="truck_18" type="truck" route="route_north_south" depart="3372"/><vehicle id="truck_19" type="truck" route="route_west_east" depart="182"/><vehicle id="truck_20" type="truck" route="route_clockwise" depart="3084"/><vehicle id="bus_21" type="bus" route="route_north_south" depart="418"/><vehicle id="truck_22" type="truck" route="route_south_north" depart="1315"/><vehicle id="emergency_23" type="emergency" route="route_west_east" depart="2301"/><vehicle id="bus_24" type="bus" route="route_counterclockwise" depart="2665"/><vehicle id="truck_25" type="truck" route="route_west_east" depart="950"/><vehicle id="truck_26" type="truck" route="route_west_east" depart="480"/><vehicle id="emergency_27" type="emergency" route="route_counterclockwise" depart="1234"/><vehicle id="bus_28" type="bus" route="route_clockwise" depart="1871"/><vehicle id="bus_29" type="bus" route="route_north_south" depart="2099"/><vehicle id="truck_30" type="truck" route="route_counterclockwise" depart="2378"/><vehicle id="truck_31" type="truck" route="route_north_south" depart="732"/></routes>
+    <!-- Horizontal routes (east to west) -->
+    <route id="route_EW_0" edges="C0B0 B0A0"/>
+    <route id="route_EW_1" edges="C1B1 B1A1"/>
+    <route id="route_EW_2" edges="C2B2 B2A2"/>
+    
+    <!-- Vertical routes (south to north) -->
+    <route id="route_SN_0" edges="A0A1 A1A2"/>
+    <route id="route_SN_1" edges="B0B1 B1B2"/>
+    <route id="route_SN_2" edges="C0C1 C1C2"/>
+    
+    <!-- Vertical routes (north to south) -->
+    <route id="route_NS_0" edges="A2A1 A1A0"/>
+    <route id="route_NS_1" edges="B2B1 B1B0"/>
+    <route id="route_NS_2" edges="C2C1 C1C0"/>
+    
+    <!-- Diagonal routes -->
+    <route id="route_NW_SE" edges="A2A1 A1B1 B1C1 C1C0"/>
+    <route id="route_NE_SW" edges="C2C1 C1B1 B1A1 A1A0"/>
+    <route id="route_SW_NE" edges="A0A1 A1B1 B1C1 C1C2"/>
+    <route id="route_SE_NW" edges="C0C1 C1B1 B1A1 A1A2"/>
+    
+    <!-- Pre-peak moderate traffic (0-600s) -->
+    <flow id="flow_pre_WE_0" type="car" route="route_WE_0" begin="0" end="600" vehsPerHour="400"/>
+    <flow id="flow_pre_WE_1" type="car" route="route_WE_1" begin="0" end="600" vehsPerHour="500"/>
+    <flow id="flow_pre_WE_2" type="car" route="route_WE_2" begin="0" end="600" vehsPerHour="300"/>
+    
+    <flow id="flow_pre_EW_0" type="car" route="route_EW_0" begin="0" end="600" vehsPerHour="300"/>
+    <flow id="flow_pre_EW_1" type="car" route="route_EW_1" begin="0" end="600" vehsPerHour="350"/>
+    <flow id="flow_pre_EW_2" type="car" route="route_EW_2" begin="0" end="600" vehsPerHour="250"/>
+    
+    <flow id="flow_pre_SN_0" type="car" route="route_SN_0" begin="0" end="600" vehsPerHour="250"/>
+    <flow id="flow_pre_SN_1" type="car" route="route_SN_1" begin="0" end="600" vehsPerHour="200"/>
+    <flow id="flow_pre_SN_2" type="car" route="route_SN_2" begin="0" end="600" vehsPerHour="200"/>
+    
+    <flow id="flow_pre_NS_0" type="car" route="route_NS_0" begin="0" end="600" vehsPerHour="600"/>
+    <flow id="flow_pre_NS_1" type="car" route="route_NS_1" begin="0" end="600" vehsPerHour="550"/>
+    <flow id="flow_pre_NS_2" type="car" route="route_NS_2" begin="0" end="600" vehsPerHour="500"/>
+    
+    <!-- Peak hour heavy traffic (600-1800s) -->
+    <flow id="flow_peak_WE_0" type="car" route="route_WE_0" begin="600" end="1800" vehsPerHour="800"/>
+    <flow id="flow_peak_WE_1" type="car" route="route_WE_1" begin="600" end="1800" vehsPerHour="1000"/>
+    <flow id="flow_peak_WE_2" type="car" route="route_WE_2" begin="600" end="1800" vehsPerHour="700"/>
+    
+    <flow id="flow_peak_EW_0" type="car" route="route_EW_0" begin="600" end="1800" vehsPerHour="500"/>
+    <flow id="flow_peak_EW_1" type="car" route="route_EW_1" begin="600" end="1800" vehsPerHour="600"/>
+    <flow id="flow_peak_EW_2" type="car" route="route_EW_2" begin="600" end="1800" vehsPerHour="450"/>
+    
+    <flow id="flow_peak_SN_0" type="car" route="route_SN_0" begin="600" end="1800" vehsPerHour="500"/>
+    <flow id="flow_peak_SN_1" type="car" route="route_SN_1" begin="600" end="1800" vehsPerHour="450"/>
+    <flow id="flow_peak_SN_2" type="car" route="route_SN_2" begin="600" end="1800" vehsPerHour="400"/>
+    
+    <flow id="flow_peak_NS_0" type="car" route="route_NS_0" begin="600" end="1800" vehsPerHour="1200"/>
+    <flow id="flow_peak_NS_1" type="car" route="route_NS_1" begin="600" end="1800" vehsPerHour="1100"/>
+    <flow id="flow_peak_NS_2" type="car" route="route_NS_2" begin="600" end="1800" vehsPerHour="1000"/>
+    
+    <flow id="flow_peak_NW_SE" type="car" route="route_NW_SE" begin="600" end="1800" vehsPerHour="250"/>
+    <flow id="flow_peak_NE_SW" type="car" route="route_NE_SW" begin="600" end="1800" vehsPerHour="350"/>
+    <flow id="flow_peak_SW_NE" type="car" route="route_SW_NE" begin="600" end="1800" vehsPerHour="200"/>
+    <flow id="flow_peak_SE_NW" type="car" route="route_SE_NW" begin="600" end="1800" vehsPerHour="150"/>
+    
+    <!-- Post-peak moderate traffic (1800-3600s) -->
+    <flow id="flow_post_WE_0" type="car" route="route_WE_0" begin="1800" end="3600" vehsPerHour="350"/>
+    <flow id="flow_post_WE_1" type="car" route="route_WE_1" begin="1800" end="3600" vehsPerHour="400"/>
+    <flow id="flow_post_WE_2" type="car" route="route_WE_2" begin="1800" end="3600" vehsPerHour="300"/>
+    
+    <flow id="flow_post_EW_0" type="car" route="route_EW_0" begin="1800" end="3600" vehsPerHour="350"/>
+    <flow id="flow_post_EW_1" type="car" route="route_EW_1" begin="1800" end="3600" vehsPerHour="400"/>
+    <flow id="flow_post_EW_2" type="car" route="route_EW_2" begin="1800" end="3600" vehsPerHour="300"/>
+    
+    <flow id="flow_post_SN_0" type="car" route="route_SN_0" begin="1800" end="3600" vehsPerHour="400"/>
+    <flow id="flow_post_SN_1" type="car" route="route_SN_1" begin="1800" end="3600" vehsPerHour="350"/>
+    <flow id="flow_post_SN_2" type="car" route="route_SN_2" begin="1800" end="3600" vehsPerHour="300"/>
+    
+    <flow id="flow_post_NS_0" type="car" route="route_NS_0" begin="1800" end="3600" vehsPerHour="600"/>
+    <flow id="flow_post_NS_1" type="car" route="route_NS_1" begin="1800" end="3600" vehsPerHour="550"/>
+    <flow id="flow_post_NS_2" type="car" route="route_NS_2" begin="1800" end="3600" vehsPerHour="500"/>
+    
+    <!-- Add regular vehicles throughout simulation -->
+    <vehicle id="bus_1" type="bus" route="route_WE_1" depart="100"/>
+    <vehicle id="truck_1" type="truck" route="route_NS_1" depart="150"/>
+    <vehicle id="emergency_1" type="emergency" route="route_EW_0" depart="200"/>
+    <vehicle id="bus_2" type="bus" route="route_SN_2" depart="300"/>
+    <vehicle id="truck_2" type="truck" route="route_EW_2" depart="350"/>
+    <vehicle id="emergency_2" type="emergency" route="route_NW_SE" depart="400"/>
+    <vehicle id="bus_3" type="bus" route="route_WE_0" depart="700"/>
+    <vehicle id="truck_3" type="truck" route="route_NS_2" depart="750"/>
+    <vehicle id="emergency_3" type="emergency" route="route_EW_1" depart="800"/>
+    <vehicle id="bus_4" type="bus" route="route_SN_0" depart="900"/>
+    <vehicle id="truck_4" type="truck" route="route_EW_1" depart="950"/>
+    <vehicle id="emergency_4" type="emergency" route="route_SE_NW" depart="1000"/>
+    <vehicle id="bus_5" type="bus" route="route_NS_1" depart="1200"/>
+    <vehicle id="truck_5" type="truck" route="route_WE_2" depart="1250"/>
+    <vehicle id="emergency_5" type="emergency" route="route_NS_0" depart="1300"/>
+    <vehicle id="bus_6" type="bus" route="route_EW_0" depart="1900"/>
+    <vehicle id="truck_6" type="truck" route="route_SN_1" depart="1950"/>
+    <vehicle id="emergency_6" type="emergency" route="route_WE_1" depart="2000"/>
+    <vehicle id="bus_7" type="bus" route="route_NS_2" depart="2100"/>
+    <vehicle id="truck_7" type="truck" route="route_EW_0" depart="2200"/>
+    <vehicle id="emergency_7" type="emergency" route="route_SW_NE" depart="2300"/>
+</routes>
